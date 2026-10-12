@@ -1,0 +1,515 @@
+/* ==========================================================================
+   FinSight AI - Transactions Page Styles (KPIs, Filters, Tables, Mobile Feed)
+   ========================================================================== */
+
+.transactionsPage,
+.advancedTransactions {
+  display: grid;
+  gap: var(--gap-base);
+  animation: fadeUp 0.3s var(--ease-smooth);
+}
+
+.transactionsHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--gap-base);
+  flex-wrap: wrap;
+}
+
+.sectionEyebrow {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+}
+
+.transactionsHero h1 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+
+.transactionsHero > div > p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--color-muted);
+  max-width: 520px;
+}
+
+.fileDropdownWrapper {
+  position: relative;
+}
+
+.importFilesBtn,
+.glassActionBtn {
+  height: 48px;
+  border: var(--border-card);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform var(--duration) var(--ease-smooth), background var(--duration);
+}
+
+.importFilesBtn:hover,
+.glassActionBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.importFilesBtn svg {
+  color: var(--color-primary);
+}
+
+.fileDropdown,
+.modernFileDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 280px;
+  z-index: 50;
+  border-radius: var(--radius-container);
+  background: #111116;
+  border: var(--border-card);
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+  animation: fadeUp 0.2s var(--ease-smooth);
+}
+
+.fileDropdownItem {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--color-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fileDropdownItem:last-child {
+  border-bottom: 0;
+}
+
+.fileDropdownItem svg {
+  color: var(--color-primary);
+  font-size: 16px;
+}
+
+.fileDropdownItem strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.fileDropdownItem span {
+  font-size: 11px;
+}
+
+/* ==========================================================================
+   KPI Cards Grid
+   ========================================================================== */
+
+.transactionKpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.transactionKpiCard {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border: var(--border-card);
+  border-radius: var(--radius-container);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: transform var(--duration) var(--ease-smooth);
+}
+
+.transactionKpiCard:hover {
+  transform: translateY(-3px);
+}
+
+.transactionKpiCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+}
+
+.transactionKpiCard:nth-child(1)::before {
+  background: var(--color-primary);
+}
+
+.transactionKpiCard:nth-child(2)::before {
+  background: var(--color-income);
+}
+
+.transactionKpiCard:nth-child(3)::before {
+  background: var(--color-expense);
+}
+
+.transactionKpiCard:nth-child(4)::before {
+  background: var(--color-edit);
+}
+
+.transactionKpiCard span,
+.transactionKpiCard small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.transactionKpiCard span {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.transactionKpiCard strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.transactionKpiCard small {
+  margin-top: 6px;
+}
+
+/* ==========================================================================
+   Search & Filter Toolbar
+   ========================================================================== */
+
+.transactionToolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+  border: var(--border-card);
+  border-radius: var(--radius-container);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 220px;
+  height: 48px;
+  padding: 0 16px;
+  border: var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color var(--duration), box-shadow var(--duration);
+}
+
+.searchBox:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-glow);
+}
+
+.searchBox svg,
+.filterIcon {
+  color: var(--color-muted);
+  font-size: 16px;
+}
+
+.searchBox input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.typeFilters,
+.modernFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.typeFilters button,
+.modernFilters button {
+  height: 38px;
+  padding: 0 16px;
+  border: var(--border-card);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--duration);
+}
+
+.typeFilters button:hover,
+.modernFilters button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text);
+}
+
+.activeFilter {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)) !important;
+  color: #03150d !important;
+  box-shadow: 0 4px 14px var(--color-primary-glow);
+}
+
+/* ==========================================================================
+   Transactions Table & Card Container
+   ========================================================================== */
+
+.modernTransactionCard {
+  overflow: hidden;
+  border: var(--border-card);
+  border-radius: var(--radius-container);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.modernTableHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modernTableHeader h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.modernTableHeader p {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.liveBadge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.desktopTransactionTable {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.transactionsTable,
+.modernTransactionsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modernTransactionsTable thead {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modernTransactionsTable th {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.modernTransactionsTable td {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.modernTransactionsTable tbody tr {
+  transition: background var(--duration);
+}
+
+.modernTransactionsTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dateCell,
+.categoryCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dateCell {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.dateCell svg {
+  color: var(--color-primary);
+}
+
+.categoryCell {
+  font-weight: 600;
+}
+
+.categoryMiniIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  font-size: 14px;
+}
+
+.typeBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.incomeBadge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+}
+
+.expenseBadge {
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+}
+
+.actionBtnGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editActionBtn,
+.deleteActionBtn {
+  height: 32px;
+  padding: 0 10px;
+  border: var(--border-card);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all var(--duration);
+}
+
+.editActionBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.deleteActionBtn {
+  color: var(--color-expense);
+}
+
+.deleteActionBtn:hover {
+  background: rgba(244, 63, 94, 0.12);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .transactionKpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .transactionsHero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .importFilesBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .transactionKpis {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .transactionKpiCard {
+    padding: 14px;
+  }
+
+  .transactionKpiCard strong {
+    font-size: 18px;
+  }
+
+  .transactionToolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .typeFilters,
+  .modernFilters {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .typeFilters button,
+  .modernFilters button {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .transactionKpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .modernTableHeader {
+    padding: 14px 16px;
+  }
+}

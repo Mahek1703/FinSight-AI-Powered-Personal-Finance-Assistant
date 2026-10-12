@@ -1,0 +1,571 @@
+/* ==========================================================================
+   FinSight AI - Loading / Splash & Landing Page Styles
+   ========================================================================== */
+
+.fs-splash-shell {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #06090e;
+  background-image: 
+    radial-gradient(circle at 50% 30%, rgba(0, 208, 132, 0.07) 0%, transparent 60%),
+    radial-gradient(circle at 50% 90%, rgba(0, 208, 132, 0.12) 0%, transparent 50%);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Background Ripples & Glows */
+.fs-splash-bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+  z-index: 0;
+}
+
+.fs-splash-bg-glow.glow-top {
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(0, 208, 132, 0.15) 0%, transparent 70%);
+}
+
+.fs-splash-bg-glow.glow-center {
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 208, 132, 0.05) 0%, transparent 65%);
+}
+
+.fs-splash-bg-ripple {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(0, 208, 132, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fs-splash-bg-ripple.ripple-1 { width: 340px; height: 340px; }
+.fs-splash-bg-ripple.ripple-2 { width: 520px; height: 520px; border-color: rgba(0, 208, 132, 0.05); }
+.fs-splash-bg-ripple.ripple-3 { width: 700px; height: 700px; border-color: rgba(0, 208, 132, 0.03); }
+
+/* Header */
+.fs-splash-header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 36px;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fs-splash-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.fs-splash-brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(0, 208, 132, 0.1);
+  border: 1px solid rgba(0, 208, 132, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 18px;
+  box-shadow: 0 0 16px var(--color-primary-glow);
+}
+
+.fs-splash-brand-text strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-title);
+  line-height: 1.1;
+}
+
+.fs-splash-brand-text small {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-muted);
+  letter-spacing: 0.06em;
+}
+
+.green-accent {
+  color: var(--color-primary);
+}
+
+.fs-splash-desktop-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fs-splash-btn-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-splash-btn-login:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.fs-splash-btn-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1.5px solid #10b981;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-splash-btn-start:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #34d399;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.fs-splash-mobile-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 18px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.fs-splash-mobile-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px;
+  background: rgba(13, 17, 23, 0.95);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 25;
+}
+
+.fs-splash-mobile-drawer .full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Hero Center Content */
+.fs-splash-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px 20px 60px;
+  position: relative;
+  z-index: 10;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Sculpted 3D 'F' Logo */
+.fs-splash-sculpted-logo {
+  width: 80px;
+  height: 96px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.6));
+  animation: fadeIn 0.4s var(--ease-smooth);
+}
+
+.sculpted-f-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fs-splash-title {
+  font-size: clamp(38px, 6vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  margin: 0 0 4px;
+  line-height: 1.05;
+}
+
+.fs-splash-subtag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-muted);
+  letter-spacing: 0.2em;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+/* Trust Pill */
+.fs-splash-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 208, 132, 0.08);
+  border: 1px solid rgba(0, 208, 132, 0.25);
+  color: var(--color-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 36px;
+}
+
+.fs-splash-trust-badge .check-icon {
+  font-size: 11px;
+}
+
+/* 4 Feature Squircles */
+.fs-splash-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 44px;
+}
+
+.fs-splash-feature-card {
+  background: rgba(13, 17, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-squircle);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(12px);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-splash-feature-card:hover {
+  background: rgba(18, 24, 34, 0.8);
+  border-color: rgba(0, 208, 132, 0.3);
+  transform: translateY(-2px);
+}
+
+.fs-splash-feature-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 208, 132, 0.08);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.fs-splash-feature-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* Bottom CTA Horizon Section */
+.fs-splash-cta-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.fs-splash-horizon-glow {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 60px;
+  background: radial-gradient(ellipse at center, rgba(0, 208, 132, 0.35) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(12px);
+}
+
+.fs-splash-btn-primary {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--radius-control);
+  background: rgba(16, 185, 129, 0.14);
+  color: #ffffff;
+  font-size: 15.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1.5px solid #10b981;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all var(--duration) var(--ease-smooth);
+  position: relative;
+  z-index: 2;
+}
+
+.fs-splash-btn-primary:hover {
+  background: rgba(16, 185, 129, 0.24);
+  border-color: #34d399;
+  transform: translateY(-2px);
+  box-shadow: none !important;
+}
+
+.fs-splash-btn-secondary {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-control);
+  background: #0d0d12;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all var(--duration) var(--ease-smooth);
+  position: relative;
+  z-index: 2;
+}
+
+.fs-splash-btn-secondary:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.fs-splash-btn-login:active,
+.fs-splash-btn-start:active,
+.fs-splash-btn-primary:active,
+.fs-splash-btn-secondary:active,
+.fs-splash-mobile-toggle:active {
+  transform: scale(0.97) !important;
+  box-shadow: none !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 680px) {
+  .fs-splash-desktop-actions {
+    display: none;
+  }
+
+  .fs-splash-mobile-toggle {
+    display: flex;
+  }
+
+  .fs-splash-header {
+    padding: 16px 20px;
+  }
+
+  .fs-splash-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .fs-splash-sculpted-logo {
+    width: 64px;
+    height: 78px;
+  }
+}
+
+/* ==========================================================================
+   FinSight AI - Light Theme Specific Overrides for Landing / Splash Page
+   ========================================================================== */
+
+.theme-light .fs-splash-shell {
+  background-color: #f8fafc !important;
+  background-image: 
+    radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.12) 0%, transparent 50%) !important;
+  color: #09090b !important;
+}
+
+.theme-light .fs-splash-bg-glow.glow-top {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, transparent 70%) !important;
+}
+
+.theme-light .fs-splash-bg-glow.glow-center {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 65%) !important;
+}
+
+.theme-light .fs-splash-bg-ripple {
+  border-color: rgba(16, 185, 129, 0.16) !important;
+}
+
+.theme-light .fs-splash-bg-ripple.ripple-2 {
+  border-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.theme-light .fs-splash-bg-ripple.ripple-3 {
+  border-color: rgba(16, 185, 129, 0.06) !important;
+}
+
+.theme-light .fs-splash-brand-text strong {
+  color: #020617 !important;
+}
+
+.theme-light .fs-splash-brand-text small {
+  color: #64748b !important;
+}
+
+.theme-light .fs-splash-btn-login {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.theme-light .fs-splash-btn-login:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #000000 !important;
+}
+
+.theme-light .fs-splash-btn-start {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid #059669 !important;
+  color: #065f46 !important;
+  box-shadow: none !important;
+}
+
+.theme-light .fs-splash-btn-start:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #047857 !important;
+  color: #064e3b !important;
+}
+
+.theme-light .fs-splash-mobile-toggle {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.theme-light .fs-splash-mobile-drawer {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.theme-light .fs-splash-sculpted-logo {
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.12)) !important;
+}
+
+.theme-light .fs-splash-title {
+  color: #020617 !important;
+}
+
+.theme-light .fs-splash-subtag {
+  color: #64748b !important;
+}
+
+.theme-light .fs-splash-trust-badge {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  color: #059669 !important;
+}
+
+.theme-light .fs-splash-feature-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04) !important;
+}
+
+.theme-light .fs-splash-feature-card:hover {
+  background: #f8fafc !important;
+  border-color: #10b981 !important;
+}
+
+.theme-light .fs-splash-feature-icon {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #059669 !important;
+}
+
+.theme-light .fs-splash-feature-name {
+  color: #0f172a !important;
+}
+
+.theme-light .fs-splash-horizon-glow {
+  background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.25) 0%, transparent 70%) !important;
+}
+
+.theme-light .fs-splash-btn-primary {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid #059669 !important;
+  color: #065f46 !important;
+  box-shadow: none !important;
+}
+
+.theme-light .fs-splash-btn-primary:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #047857 !important;
+  color: #064e3b !important;
+  box-shadow: none !important;
+}
+
+.theme-light .fs-splash-btn-secondary {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.theme-light .fs-splash-btn-secondary:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}

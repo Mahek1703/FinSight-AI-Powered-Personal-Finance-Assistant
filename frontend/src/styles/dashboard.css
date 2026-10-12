@@ -1,0 +1,1666 @@
+/* ==========================================================================
+   FinSight AI - Ultra-Modern Black Monotonic Dashboard Styles
+   ========================================================================== */
+
+/* Main Dashboard Grid Structure */
+.fs-dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: fadeIn var(--duration) var(--ease-smooth);
+}
+
+/* ==========================================================================
+   1. Metrics 4-Cards Grid
+   ========================================================================== */
+
+.fs-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.fs-metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.fs-metric-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-squircle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: transform var(--duration) var(--ease-smooth);
+}
+
+.fs-metric-card:hover .fs-metric-icon-wrap {
+  transform: scale(1.05);
+}
+
+.fs-metric-icon-wrap.balance {
+  background: rgba(0, 208, 132, 0.12);
+  color: var(--color-primary);
+  border: 1px solid rgba(0, 208, 132, 0.2);
+}
+
+.fs-metric-icon-wrap.expense {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--color-expense);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.fs-metric-icon-wrap.income {
+  background: rgba(0, 208, 132, 0.12);
+  color: var(--color-income);
+  border: 1px solid rgba(0, 208, 132, 0.2);
+}
+
+.fs-metric-icon-wrap.networth {
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--color-teal);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.fs-metric-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fs-metric-label {
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  margin: 0;
+}
+
+.fs-metric-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text-title);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 2px 0 6px;
+}
+
+.fs-metric-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+.fs-metric-trend.up {
+  color: var(--color-income);
+}
+
+.fs-metric-trend.down {
+  color: var(--color-expense);
+}
+
+.fs-metric-trend span.trend-context {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   2. AI Quick Action Prompt Bar
+   ========================================================================== */
+
+.fs-ai-bar-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-card);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-ai-bar-card:focus-within {
+  border-color: var(--color-border-glow);
+  box-shadow: 0 0 20px rgba(0, 208, 132, 0.15);
+}
+
+.fs-ai-spark-icon {
+  color: var(--color-primary);
+  font-size: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fs-ai-bar-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-title);
+  font-size: 14.5px;
+  padding: 8px 0;
+  font-weight: 500;
+}
+
+.fs-ai-bar-input::placeholder {
+  color: var(--color-muted);
+}
+
+.fs-ai-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fs-clip-btn,
+.fs-mic-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  border: 1px solid var(--color-border);
+  background: var(--bg-card-solid);
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-clip-btn:hover,
+.fs-mic-btn:hover {
+  color: var(--color-text-title);
+  background: var(--bg-card-hover);
+  border-color: var(--color-border-light);
+}
+
+.fs-add-tx-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #10b981 !important;
+  color: #000000 !important;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none !important;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  transition: all var(--duration) var(--ease-smooth);
+  white-space: nowrap;
+}
+
+.fs-add-tx-pill-btn:hover {
+  background-color: #34d399 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+.fs-add-tx-pill-btn svg {
+  font-size: 14px;
+}
+
+/* Mobile Quick Plus Button */
+.fs-add-tx-squircle-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background-color: #10b981 !important;
+  color: #000000 !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: none !important;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-add-tx-squircle-btn:hover {
+  background-color: #34d399 !important;
+}
+
+.fs-add-tx-squircle-btn:active {
+  transform: scale(0.94);
+}
+
+/* ==========================================================================
+   3. Main 2-Column Section (Transactions + Notifications)
+   ========================================================================== */
+
+.fs-main-2col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+
+.fs-section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+  min-height: 280px;
+}
+
+.fs-section-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.fs-section-card-head h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin: 0;
+}
+
+.fs-view-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-view-all-link:hover {
+  color: var(--color-primary-light);
+  gap: 8px;
+}
+
+/* Empty State Styling (Matches Mockup) */
+.fs-empty-state-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px 16px;
+}
+
+.fs-empty-circle-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+
+.fs-empty-state-wrap h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin: 0 0 6px;
+}
+
+.fs-empty-state-wrap p {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+/* Populated Transaction List */
+.fs-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fs-tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-tx-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.fs-tx-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.fs-tx-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-squircle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.fs-tx-icon-wrap.income {
+  background: rgba(0, 208, 132, 0.12);
+  color: var(--color-income);
+}
+
+.fs-tx-icon-wrap.expense {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--color-expense);
+}
+
+.fs-tx-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fs-tx-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fs-tx-meta {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.fs-tx-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fs-tx-amount {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fs-tx-amount.income {
+  color: var(--color-income);
+}
+
+.fs-tx-amount.expense {
+  color: var(--color-text-title);
+}
+
+.fs-tx-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fs-tx-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-tx-action-btn:hover {
+  color: var(--color-text-title);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fs-tx-action-btn.delete:hover {
+  color: var(--color-expense);
+  background: rgba(244, 63, 94, 0.15);
+}
+
+/* ==========================================================================
+   4. Bottom 4 Feature Cards
+   ========================================================================== */
+
+.fs-feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.fs-feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--duration) var(--ease-smooth);
+  width: 100%;
+}
+
+.fs-feature-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-elevated);
+}
+
+.fs-feature-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-title);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fs-feature-card:hover .fs-feature-icon-circle {
+  color: var(--color-primary);
+  border-color: rgba(0, 208, 132, 0.3);
+}
+
+/* Radial Gauge Icon for Budget Status */
+.fs-radial-gauge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 208, 132, 0.08);
+  border: 2px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.fs-feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fs-feature-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin: 0;
+}
+
+.fs-feature-desc {
+  font-size: 12px;
+  color: var(--color-muted);
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ==========================================================================
+   5. Interactive Modals (Add Transaction, AI Voice, Bills, Goals)
+   ========================================================================== */
+
+.fs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalBackdrop var(--duration) var(--ease-smooth);
+}
+
+.fs-modal-box {
+  width: 100%;
+  max-width: 520px;
+  background: var(--bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--shadow-elevated);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalScale var(--duration) var(--ease-smooth);
+}
+
+.fs-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fs-modal-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-title);
+}
+
+.fs-modal-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--bg-card-solid);
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-modal-close-btn:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--color-text-title);
+  border-color: var(--color-border-light);
+}
+
+/* Modal Form Controls */
+.fs-type-segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  background: var(--bg-input);
+  border-radius: var(--radius-control);
+  margin-bottom: 18px;
+  border: 1px solid var(--color-border);
+  gap: 6px;
+}
+
+.fs-type-segmented button {
+  height: 42px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background-color: var(--bg-card-solid);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-type-segmented button.active.income {
+  background-color: #10b981 !important;
+  color: #000000 !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+}
+
+.fs-type-segmented button.active.income svg {
+  color: #000000 !important;
+}
+
+.fs-type-segmented button.active.expense {
+  background-color: #f43f5e !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(244, 63, 94, 0.4);
+}
+
+.fs-type-segmented button.active.expense svg {
+  color: #ffffff !important;
+}
+
+.fs-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.fs-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fs-form-input,
+.fs-form-select {
+  height: 46px;
+  background: var(--bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: 0 14px;
+  color: var(--color-text-title);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-form-input:focus,
+.fs-form-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-glow);
+}
+
+.fs-quick-chips-wrap {
+  margin-top: 14px;
+}
+
+.fs-quick-chips-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+
+.fs-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fs-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--bg-card-solid);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-title);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-chip-btn:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--color-border-light);
+  color: var(--color-text-title);
+}
+
+.fs-chip-btn.active {
+  background-color: #10b981 !important;
+  color: #000000 !important;
+  border-color: #10b981 !important;
+}
+
+.fs-chip-btn.active svg {
+  color: #000000 !important;
+}
+
+.fs-modal-submit-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-control);
+  background-color: #10b981 !important;
+  color: #000000 !important;
+  font-size: 15px;
+  font-weight: 700 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  border: none !important;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-modal-submit-btn:hover {
+  background-color: #34d399 !important;
+  color: #000000 !important;
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5);
+}
+
+.fs-modal-submit-btn svg {
+  color: #000000 !important;
+}
+
+/* Voice Entry & AI Modal */
+.fs-voice-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0 10px;
+}
+
+.fs-voice-mic-circle {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #05df72, #00d084);
+  color: #03140a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 0 30px var(--color-primary-glow);
+  margin-bottom: 20px;
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+.fs-voice-listening-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin: 0 0 6px;
+}
+
+.fs-voice-subtext {
+  font-size: 13.5px;
+  color: var(--color-muted);
+  max-width: 320px;
+  margin: 0 0 20px;
+}
+
+.fs-voice-examples {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fs-voice-example-btn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background-color: #0d0d0d !important;
+  border: 1px solid #27272a !important;
+  color: #ffffff !important;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-voice-example-btn:hover {
+  background-color: #18181b !important;
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* ==========================================================================
+   AI Investment Advisor Studio Styles
+   ========================================================================== */
+
+.fs-ai-advisor-view {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: fadeIn var(--duration) var(--ease-smooth);
+}
+
+.fs-ai-header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.fs-ai-title-group h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-title);
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+
+.fs-ai-title-group p {
+  font-size: 14px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.fs-risk-profile-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fs-risk-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fs-risk-toggle-group {
+  display: flex;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.fs-risk-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-risk-btn:hover {
+  color: var(--color-text);
+}
+
+.fs-risk-btn.active {
+  background: rgba(0, 208, 132, 0.12);
+  color: var(--color-primary);
+  border: 1px solid rgba(0, 208, 132, 0.35);
+  box-shadow: 0 0 14px var(--color-primary-glow);
+}
+
+/* 2-Column AI Grid */
+.fs-ai-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 18px;
+}
+
+.fs-ai-card {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+}
+
+/* Allocation Engine */
+.fs-engine-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.fs-cashflow-highlight-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  background: rgba(0, 208, 132, 0.04);
+  border: 1px solid rgba(0, 208, 132, 0.18);
+  border-radius: var(--radius-control);
+}
+
+.fs-cashflow-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-squircle);
+  background: rgba(0, 208, 132, 0.1);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fs-cashflow-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fs-cashflow-label {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.fs-cashflow-amount {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.fs-cashflow-amount small {
+  font-size: 13px;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.fs-cashflow-mini-graph {
+  width: 90px;
+  height: 30px;
+}
+
+.fs-mini-sparkline {
+  width: 100%;
+  height: 100%;
+}
+
+.fs-alloc-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.fs-alloc-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.fs-alloc-icon-wrap.green {
+  background: rgba(0, 208, 132, 0.12);
+  color: var(--color-primary);
+}
+
+.fs-alloc-icon-wrap.teal {
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--color-teal);
+}
+
+.fs-alloc-icon-wrap.gold {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--color-warning);
+}
+
+.fs-alloc-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fs-alloc-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text-title);
+}
+
+.fs-alloc-desc {
+  font-size: 11.5px;
+  color: var(--color-muted);
+}
+
+.fs-alloc-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 4px;
+  max-width: 140px;
+}
+
+.fs-alloc-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 9999px;
+}
+
+.fs-alloc-fill.teal { background: var(--color-teal); }
+.fs-alloc-fill.gold { background: var(--color-warning); }
+
+.fs-alloc-values {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fs-alloc-amount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  white-space: nowrap;
+}
+
+.fs-alloc-amount small {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.fs-alloc-badge {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.fs-deploy-flow-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: #03140a;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--color-primary-glow);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-deploy-flow-btn:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+/* Strategy Card */
+.fs-strategy-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.fs-add-strategy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-add-strategy-pill:hover {
+  background: rgba(0, 208, 132, 0.1);
+  border-color: var(--color-primary);
+}
+
+.fs-strategy-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0 20px;
+}
+
+.fs-strategy-target-wrap {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 12px;
+}
+
+.fs-target-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fs-strategy-empty-state h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  margin: 0 0 4px;
+}
+
+.fs-strategy-empty-state p {
+  font-size: 13px;
+  color: var(--color-muted);
+  max-width: 320px;
+  margin: 0;
+}
+
+/* Projected Performance Box */
+.fs-projected-perf-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  background: rgba(0, 208, 132, 0.03);
+  border: 1px solid rgba(0, 208, 132, 0.2);
+  border-radius: var(--radius-control);
+  margin: 20px 0;
+}
+
+.fs-perf-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fs-perf-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-squircle);
+  background: rgba(0, 208, 132, 0.12);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.fs-perf-label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.fs-perf-title {
+  display: block;
+  font-size: 14px;
+  color: var(--color-text-title);
+  font-weight: 800;
+}
+
+.fs-perf-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.fs-perf-right {
+  text-align: right;
+}
+
+.fs-perf-rate {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.fs-perf-gain {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.fs-execute-strategy-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-control);
+  background: transparent;
+  border: 1px solid rgba(0, 208, 132, 0.4);
+  color: var(--color-primary);
+  font-size: 14.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-execute-strategy-btn:hover {
+  background: rgba(0, 208, 132, 0.08);
+  border-color: var(--color-primary);
+}
+
+/* Disclaimer Banner */
+.fs-ai-disclaimer-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-muted);
+  font-size: 12.5px;
+}
+
+.fs-ai-disclaimer-banner svg {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .fs-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fs-main-2col,
+  .fs-ai-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fs-feature-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .fs-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .fs-metric-card {
+    padding: 16px;
+  }
+
+  .fs-metric-icon-wrap {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .fs-metric-value {
+    font-size: 20px;
+  }
+
+  .fs-metric-trend {
+    font-size: 11px;
+  }
+
+  .fs-ai-bar-card {
+    padding: 8px 12px;
+  }
+
+  .fs-add-tx-pill-btn {
+    display: none;
+  }
+
+  .fs-add-tx-squircle-btn {
+    display: flex;
+  }
+
+  .fs-feature-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .fs-section-card {
+    padding: 16px;
+  }
+
+  .fs-empty-circle-badge {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+  }
+}
+
+/* ==========================================================================
+   Toast Notification System
+   ========================================================================== */
+.fs-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  max-width: 380px;
+  width: calc(100% - 48px);
+}
+
+.fs-toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(13, 19, 30, 0.95);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2);
+  color: var(--color-text-title);
+  font-size: 13.5px;
+  font-weight: 500;
+  animation: slideToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s ease;
+}
+
+@keyframes slideToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fs-toast-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.fs-toast-success {
+  border-color: rgba(0, 208, 132, 0.35);
+}
+.fs-toast-success .fs-toast-icon {
+  color: var(--color-primary);
+}
+
+.fs-toast-error {
+  border-color: rgba(244, 63, 94, 0.35);
+}
+.fs-toast-error .fs-toast-icon {
+  color: var(--color-expense);
+}
+
+.fs-toast-warning {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+.fs-toast-warning .fs-toast-icon {
+  color: #fbbf24;
+}
+
+.fs-toast-info {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+.fs-toast-info .fs-toast-icon {
+  color: #38bdf8;
+}
+
+.fs-toast-msg {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.fs-toast-close {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.fs-toast-close:hover {
+  color: var(--color-text-title);
+}
+
+/* ==========================================================================
+   Receipt Scanning & OCR Visualizer
+   ========================================================================== */
+.fs-scanner-animation-wrap {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto;
+  border-radius: var(--radius-card);
+  background: rgba(0, 208, 132, 0.08);
+  border: 1px solid rgba(0, 208, 132, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.fs-receipt-scan-icon {
+  font-size: 40px;
+  color: var(--color-primary);
+}
+
+.fs-scan-laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #00d084, #38bdf8, transparent);
+  box-shadow: 0 0 12px var(--color-primary);
+  animation: scanLaser 1.5s infinite linear;
+}
+
+@keyframes scanLaser {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 95%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.fs-spin {
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Voice Mic Pulse & Live Visualizer
+   ========================================================================== */
+.fs-voice-mic-circle.listening-pulse {
+  background: radial-gradient(circle, rgba(0, 208, 132, 0.4), rgba(0, 208, 132, 0.1));
+  box-shadow: 0 0 0 0 rgba(0, 208, 132, 0.7);
+  animation: voicePulse 1.4s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+@keyframes voicePulse {
+  to {
+    box-shadow: 0 0 0 28px rgba(0, 208, 132, 0);
+  }
+}
+
+/* ==========================================================================
+   Recurring Bills & Goals Extras
+   ========================================================================== */
+.fs-bill-add-inline {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 14px;
+}
+
+.fs-bill-inputs-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .fs-bill-inputs-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fs-bills-mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.fs-bill-mini-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-bill-mini-row strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--color-text-title);
+}
+
+.fs-bill-mini-row small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.fs-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.fs-goal-item-card {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.fs-goal-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  color: var(--color-text-title);
+}
+
+.fs-goal-item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.fs-feature-arrow {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: 12px;
+  transition: transform var(--duration) var(--ease-smooth), color var(--duration) var(--ease-smooth);
+}
+
+.fs-feature-card:hover .fs-feature-arrow {
+  transform: translateX(4px);
+  color: var(--color-primary);
+}
+
+.fs-tx-note-inline {
+  color: var(--color-muted);
+  font-weight: normal;
+  font-size: 12px;
+}
+
+.fs-alert-item {
+  cursor: pointer;
+  transition: background var(--duration) var(--ease-smooth);
+}
+
+.fs-alert-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+

@@ -1,0 +1,274 @@
+/* ==========================================================================
+   FinSight AI - Settings Page Styles
+   ========================================================================== */
+
+.fs-settings-page {
+  display: grid;
+  gap: var(--gap-base);
+  animation: fadeUp 0.3s var(--ease-smooth);
+}
+
+.fs-page-title h1 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+
+.fs-page-title p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.fs-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap-base);
+}
+
+.fs-setting-card {
+  padding: 24px;
+}
+
+.fs-setting-card .setting-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.fs-setting-card .setting-title > svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: var(--radius-control);
+  flex-shrink: 0;
+  font-size: 20px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.fs-setting-card .setting-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.fs-setting-card .setting-title p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.fs-setting-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-muted);
+  margin: 12px 0 6px;
+}
+
+.fs-setting-card input:not([type="checkbox"]),
+.fs-setting-card select {
+  width: 100%;
+  height: 48px;
+  border: var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--bg-input);
+  color: var(--color-text);
+  padding: 0 14px;
+  outline: 0;
+  font-size: 14px;
+  transition: border-color var(--duration), box-shadow var(--duration);
+}
+
+.fs-setting-card input:focus,
+.fs-setting-card select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-glow);
+}
+
+.fs-outline {
+  margin-top: 16px;
+  height: 44px;
+  padding: 0 20px;
+  border: var(--border-card);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--duration);
+}
+
+.fs-outline:hover {
+  background: rgba(16, 185, 129, 0.08);
+  transform: translateY(-2px);
+}
+
+.select-line {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 10px 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--color-text) !important;
+}
+
+.select-line select {
+  width: auto;
+  min-width: 140px;
+  margin: 0 !important;
+}
+
+.toggle-line,
+.menu-line {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--duration);
+}
+
+.toggle-line:last-child,
+.menu-line:last-child {
+  border-bottom: 0;
+}
+
+.toggle-line:hover,
+.menu-line:hover {
+  color: var(--color-primary);
+}
+
+.menu-line.danger {
+  color: var(--color-expense);
+}
+
+.menu-line svg {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.toggle-line span {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--duration) var(--ease-smooth);
+}
+
+.toggle-line span::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform var(--duration) var(--ease-smooth);
+}
+
+.toggle-line span.on {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+}
+
+.toggle-line span.on::after {
+  transform: translateX(20px);
+}
+
+/* Theme panel */
+.fs-theme-panel {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.fs-theme-panel > .setting-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.fs-theme-panel > .setting-title > svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: var(--radius-control);
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-size: 20px;
+}
+
+.fs-theme-panel > button {
+  min-height: 90px;
+  border: var(--border-card);
+  border-radius: var(--radius-container);
+  background: var(--bg-input);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+
+.fs-theme-panel > button svg {
+  font-size: 24px;
+  color: var(--color-muted);
+}
+
+.fs-theme-panel > button.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-glow), var(--shadow-card);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.fs-theme-panel > button.selected svg {
+  color: var(--color-primary);
+}
+
+.fs-theme-panel > button:hover:not(.selected) {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .fs-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fs-theme-panel {
+    grid-template-columns: 1fr;
+  }
+}

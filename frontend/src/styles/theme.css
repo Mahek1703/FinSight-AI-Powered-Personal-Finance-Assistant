@@ -1,0 +1,586 @@
+/* ==========================================================================
+   FinSight AI - Ultra-Modern Light & Dark Theme System
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Theme Variables & Tokens
+   -------------------------------------------------------------------------- */
+
+html.theme-light,
+body.theme-light {
+  color-scheme: light;
+  --color-text: #09090b;
+  --color-text-title: #020617;
+  --color-text-secondary: #475569;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-border-glow: rgba(16, 185, 129, 0.2);
+  
+  --bg-page: #f8fafc;
+  --bg-canvas: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-solid: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-surface-raised: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+  --bg-dock: rgba(255, 255, 255, 0.92);
+  --bg-glass: rgba(255, 255, 255, 0.88);
+  
+  --color-primary: #10b981;
+  --color-primary-dark: #059669;
+  --color-primary-light: #34d399;
+  --color-income: #059669;
+  --color-expense: #e11d48;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+  --shadow-glow: none;
+  
+  background-color: #f8fafc !important;
+  color: #09090b !important;
+}
+
+html.theme-dark,
+body.theme-dark {
+  color-scheme: dark;
+  --color-text: #f8fafc;
+  --color-text-title: #ffffff;
+  --color-text-secondary: #94a3b8;
+  --color-muted: #64748b;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.12);
+  --color-border-glow: rgba(16, 185, 129, 0.3);
+  
+  --bg-page: #000000;
+  --bg-canvas: #040406;
+  --bg-card: #0a0a0d;
+  --bg-card-solid: #0c0c10;
+  --bg-card-hover: #121217;
+  --bg-surface-raised: #101015;
+  --bg-surface-elevated: #16161d;
+  --bg-input: #08080a;
+  --bg-input-focus: #0f0f14;
+  --bg-dock: rgba(10, 10, 13, 0.85);
+  --bg-glass: rgba(12, 12, 16, 0.75);
+  
+  --color-primary: #10b981;
+  --color-primary-dark: #059669;
+  --color-income: #10b981;
+  --color-expense: #f43f5e;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.85);
+  
+  background-color: #000000 !important;
+  color: #f8fafc !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Light Theme - Ultra-Modern White Monotonic Surface Overrides
+   -------------------------------------------------------------------------- */
+
+.theme-light,
+.theme-light body,
+.theme-light #root,
+.theme-light .fs-app-shell {
+  background-color: #f8fafc !important;
+  color: #09090b !important;
+}
+
+/* Cards, Elevated Containers & Modals in Light Mode */
+.theme-light .bg-\[\#000000\],
+.theme-light .bg-\[\#040406\],
+.theme-light .bg-\[\#08080b\],
+.theme-light .bg-\[\#0a0a0d\],
+.theme-light .bg-\[\#0d0d12\],
+.theme-light .bg-\[\#121318\],
+.theme-light .bg-\[\#0D0D0D\],
+.theme-light .bg-\[\#080b11\],
+.theme-light .bg-\[\#101015\],
+.theme-light .bg-zinc-950,
+.theme-light .fs-card,
+.theme-light .fs-account-card,
+.theme-light .fs-hero-glass-card,
+.theme-light .transactionKpiCard,
+.theme-light .modernTransactionCard,
+.theme-light .glassCategoryCard,
+.theme-light .fs-goals-view,
+.theme-light .fs-budget-envelope-card,
+.theme-light .fs-modal-card {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Inner Wells, Filter Strips, Badges & Secondary Boxes in Light Mode */
+.theme-light .bg-\[\#0c0c10\],
+.theme-light .bg-\[\#0b0c10\],
+.theme-light .bg-\[\#0e0e12\],
+.theme-light .bg-\[\#0e0e14\],
+.theme-light .bg-\[\#121217\],
+.theme-light .bg-\[\#121218\],
+.theme-light .bg-\[\#14141a\],
+.theme-light .bg-\[\#16161d\],
+.theme-light .bg-\[\#18181b\],
+.theme-light .bg-\[\#181822\],
+.theme-light .bg-\[\#191a22\],
+.theme-light .bg-\[\#1a1a24\],
+.theme-light .bg-\[\#1c1d24\],
+.theme-light .bg-\[\#1e1f26\],
+.theme-light .bg-\[\#111116\],
+.theme-light .bg-zinc-900,
+.theme-light .bg-zinc-900\/90,
+.theme-light .bg-zinc-900\/80,
+.theme-light .bg-zinc-900\/60,
+.theme-light .bg-zinc-950\/60,
+.theme-light .bg-zinc-950\/90,
+.theme-light .bg-black\/60,
+.theme-light .bg-black\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Category Badge & Filter Pill Light Mode Overrides */
+.theme-light span.bg-zinc-800,
+.theme-light span.bg-zinc-800\/80 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.theme-light .hover\:bg-\[\#121217\]:hover,
+.theme-light .hover\:bg-\[\#121218\]:hover {
+  background-color: #ffffff !important;
+}
+
+/* Border Overrides in Light Mode */
+.theme-light .border-white\/\[0\.04\],
+.theme-light .border-white\/\[0\.05\],
+.theme-light .border-white\/\[0\.06\],
+.theme-light .border-white\/\[0\.08\],
+.theme-light .border-white\/\[0\.09\],
+.theme-light .border-white\/\[0\.1\],
+.theme-light .border-white\/\[0\.12\],
+.theme-light .border-white\/\[0\.2\],
+.theme-light .border-zinc-800,
+.theme-light .border-zinc-800\/60,
+.theme-light .border-zinc-800\/80,
+.theme-light .border-zinc-900,
+.theme-light .border-zinc-700 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Typography Overrides (Excluding Icon Colors) */
+.theme-light h1:not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-amber"]),
+.theme-light h2:not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-amber"]),
+.theme-light h3:not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-amber"]),
+.theme-light h4:not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-amber"]),
+.theme-light strong:not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-amber"]),
+.theme-light .text-zinc-100,
+.theme-light .text-zinc-200,
+.theme-light .text-zinc-300 {
+  color: #0f172a !important;
+}
+
+.theme-light p.text-white,
+.theme-light span.text-white,
+.theme-light div.text-white {
+  color: #0f172a;
+}
+
+.theme-light .text-zinc-400 {
+  color: #475569;
+}
+
+.theme-light .text-zinc-500 {
+  color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   3. ORIGINAL ICON & ACCENT COLORS (Preserved in Both Themes)
+   -------------------------------------------------------------------------- */
+
+/* Emerald / Green Accent Icons */
+.text-emerald-400,
+.text-emerald-500,
+.text-green-400,
+.text-green-500,
+.theme-light .text-emerald-400,
+.theme-light .text-emerald-500,
+.theme-light .text-green-400,
+.theme-light .text-green-500,
+svg.text-emerald-400,
+.theme-light svg.text-emerald-400 {
+  color: #10b981 !important;
+}
+
+/* Rose / Red Expense Icons */
+.text-rose-400,
+.text-rose-500,
+.text-red-400,
+.text-red-500,
+.theme-light .text-rose-400,
+.theme-light .text-rose-500,
+.theme-light .text-red-400,
+.theme-light .text-red-500,
+svg.text-rose-400,
+.theme-light svg.text-rose-400 {
+  color: #f43f5e !important;
+}
+
+/* Purple / Violet Icons (Shopping, AI, Insights) */
+.text-purple-400,
+.text-purple-500,
+.text-violet-400,
+.theme-light .text-purple-400,
+.theme-light .text-purple-500,
+.theme-light .text-violet-400,
+svg.text-purple-400,
+.theme-light svg.text-purple-400 {
+  color: #a855f7 !important;
+}
+
+/* Sky / Blue Icons (Bills, Statements, Cloud) */
+.text-sky-400,
+.text-sky-500,
+.text-blue-400,
+.text-blue-500,
+.theme-light .text-sky-400,
+.theme-light .text-sky-500,
+.theme-light .text-blue-400,
+.theme-light .text-blue-500,
+svg.text-sky-400,
+.theme-light svg.text-sky-400 {
+  color: #38bdf8 !important;
+}
+
+/* Amber / Orange / Gold Icons (Travel, Bank, Gold, Sun, Alerts) */
+.text-amber-400,
+.text-amber-500,
+.text-orange-400,
+.text-yellow-400,
+.theme-light .text-amber-400,
+.theme-light .text-amber-500,
+.theme-light .text-orange-400,
+.theme-light .text-yellow-400,
+svg.text-amber-400,
+.theme-light svg.text-amber-400 {
+  color: #f59e0b !important;
+}
+
+/* Indigo Icons (Education, Moon, Security) */
+.text-indigo-400,
+.text-indigo-500,
+.theme-light .text-indigo-400,
+.theme-light .text-indigo-500,
+svg.text-indigo-400,
+.theme-light svg.text-indigo-400 {
+  color: #818cf8 !important;
+}
+
+/* Teal Icons (Investment, Crypto, Gold) */
+.text-teal-400,
+.text-teal-500,
+.theme-light .text-teal-400,
+.theme-light .text-teal-500,
+svg.text-teal-400,
+.theme-light svg.text-teal-400 {
+  color: #14b8a6 !important;
+}
+
+/* Account Visual Squircle Badges (Accounts Page) */
+.theme-light .bg-\[\#e6f4ea\],
+.theme-light .dark\:bg-\[\#13281d\] {
+  background-color: #e6f4ea !important;
+  color: #0f9d58 !important;
+}
+.theme-light .bg-\[\#e6f4ea\] svg,
+.theme-light .dark\:bg-\[\#13281d\] svg {
+  color: #0f9d58 !important;
+}
+
+.theme-light .bg-\[\#fce8e6\],
+.theme-light .dark\:bg-\[\#2d1417\] {
+  background-color: #fce8e6 !important;
+  color: #d93025 !important;
+}
+.theme-light .bg-\[\#fce8e6\] svg,
+.theme-light .dark\:bg-\[\#2d1417\] svg {
+  color: #d93025 !important;
+}
+
+.theme-light .bg-\[\#e8f0fe\],
+.theme-light .dark\:bg-\[\#142038\] {
+  background-color: #e8f0fe !important;
+  color: #1a73e8 !important;
+}
+.theme-light .bg-\[\#e8f0fe\] svg,
+.theme-light .dark\:bg-\[\#142038\] svg {
+  color: #1a73e8 !important;
+}
+
+.theme-light .bg-\[\#fef7e0\],
+.theme-light .dark\:bg-\[\#2c220f\] {
+  background-color: #fef7e0 !important;
+  color: #f29900 !important;
+}
+.theme-light .bg-\[\#fef7e0\] svg,
+.theme-light .dark\:bg-\[\#2c220f\] svg {
+  color: #f29900 !important;
+}
+
+.theme-light .bg-\[\#f3e8fd\],
+.theme-light .dark\:bg-\[\#251538\] {
+  background-color: #f3e8fd !important;
+  color: #9334e6 !important;
+}
+.theme-light .bg-\[\#f3e8fd\] svg,
+.theme-light .dark\:bg-\[\#251538\] svg {
+  color: #9334e6 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Form Controls & Inputs (Light Theme)
+   -------------------------------------------------------------------------- */
+
+.theme-light input:not([type="checkbox"]):not([type="radio"]),
+.theme-light select,
+.theme-light textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.theme-light input:not([type="checkbox"]):not([type="radio"]):focus,
+.theme-light select:focus,
+.theme-light textarea:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.theme-light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Universal Buttons (Zero Shadow Standard in Light Mode)
+   -------------------------------------------------------------------------- */
+
+.theme-light .btn-primary,
+.theme-light .authSubmit,
+.theme-light .fs-modal-submit-btn,
+.theme-light .fs-splash-btn-primary,
+.theme-light .fs-splash-btn-start,
+.theme-light button.bg-emerald-500,
+.theme-light button[type="submit"]:not(.bg-transparent):not(.btn-secondary) {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid #059669 !important;
+  color: #065f46 !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.theme-light .btn-primary:hover:not(:disabled),
+.theme-light .authSubmit:hover:not(:disabled),
+.theme-light .fs-modal-submit-btn:hover:not(:disabled),
+.theme-light button.bg-emerald-500:hover:not(:disabled),
+.theme-light button[type="submit"]:hover:not(:disabled) {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  border-color: #047857 !important;
+  color: #064e3b !important;
+  box-shadow: none !important;
+}
+
+.theme-light .btn-secondary,
+.theme-light .googleBtn,
+.theme-light .appleBtn,
+.theme-light .fs-splash-btn-secondary {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.theme-light .btn-secondary:hover,
+.theme-light .googleBtn:hover,
+.theme-light .appleBtn:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #000000 !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Header & Navigation (Light Theme)
+   -------------------------------------------------------------------------- */
+
+.theme-light header,
+.theme-light .fs-topbar-header {
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.theme-light header nav,
+.theme-light .fs-topbar-nav {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light header nav a:not(.font-bold) {
+  color: #475569 !important;
+}
+
+.theme-light header nav a:not(.font-bold):hover {
+  color: #09090b !important;
+  background-color: #e2e8f0 !important;
+}
+
+.theme-light header nav a.font-bold {
+  background-color: #ffffff !important;
+  color: #059669 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.theme-light .fs-dropdown,
+.theme-light header .bg-\[\#0D0D0D\] {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Mobile Bottom Navigation Bar (Light Theme)
+   -------------------------------------------------------------------------- */
+
+.theme-light nav.fixed.bottom-0,
+.theme-light .fs-mobile-nav {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-top: 1px solid #e2e8f0 !important;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.06) !important;
+}
+
+.theme-light nav.fixed.bottom-0 a:not(.text-emerald-400) {
+  color: #64748b !important;
+}
+
+.theme-light nav.fixed.bottom-0 a:hover {
+  color: #09090b !important;
+}
+
+.theme-light nav.fixed.bottom-0 a.text-emerald-400 {
+  color: #059669 !important;
+}
+
+.theme-light nav.fixed.bottom-0 a.text-emerald-400 .bg-emerald-500\/15 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.theme-light nav.fixed.bottom-0 button[aria-label="Add Transaction"] {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.theme-light nav.fixed.bottom-0 button[aria-label="Add Transaction"] svg {
+  color: #059669 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Modals, Backdrops & Drawers (Light Theme)
+   -------------------------------------------------------------------------- */
+
+.theme-light .fixed.inset-0.bg-black\/80,
+.theme-light .fixed.inset-0.bg-black\/60,
+.theme-light .fixed.inset-0.bg-black\/70,
+.theme-light .fs-modal-overlay {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.theme-light .bg-\[\#121318\],
+.theme-light .bg-\[\#0d0d12\],
+.theme-light .fs-modal-card,
+.theme-light .fs-drawer-panel {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.18) !important;
+}
+
+.theme-light button[aria-label="Close modal"],
+.theme-light .fs-modal-close-btn {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.theme-light button[aria-label="Close modal"]:hover,
+.theme-light .fs-modal-close-btn:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Sliding Toggle in AddTransactionModal */
+.theme-light .grid.grid-cols-2.p-1.bg-\[\#0b0c10\] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Toast Notifications & Recharts Tooltips (Light Theme)
+   -------------------------------------------------------------------------- */
+
+.theme-light .fs-toast-item {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+.theme-light .fs-toast-msg {
+  color: #0f172a !important;
+}
+
+.theme-light .fs-toast-close {
+  color: #94a3b8 !important;
+}
+
+.theme-light .fs-toast-close:hover {
+  color: #0f172a !important;
+}
+
+.theme-light .recharts-default-tooltip,
+.theme-light .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. Scrollbars (Light Theme)
+   -------------------------------------------------------------------------- */
+
+.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+
