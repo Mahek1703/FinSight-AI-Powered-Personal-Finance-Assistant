@@ -8,7 +8,11 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_ORIGIN || "*",
+  })
+);
 app.use(express.json());
 
 const { default: aiRoutes } = await import("./routes/ai.routes.js");

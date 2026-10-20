@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import AppRoutes from "./routes/AppRoutes";
 import Navbar from "./components/Navbar";
+import SplashScreen from "./components/SplashScreen";
 import AuthModal from "./components/AuthModal";
 import AddTransactionModal from "./components/AddTransactionModal";
 import MobileBottomNav from "./components/navigation/MobileBottomNav";
@@ -57,7 +58,32 @@ function App() {
   const isLanding = location.pathname === "/";
 
   const [showForm, setShowForm] = useState(false);
+  const [isApp, setIsApp] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
   const [globalAddModalOpen, setGlobalAddModalOpen] = useState(false);
+
+  // Splash Screen Logic: ONLY display when opened as an installed PWA or native web app container.
+  // Standard web browser sessions bypass the splash screen completely.
+  useEffect(() => {
+    const isStandalone =
+      (typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
+      (typeof window !== "undefined" && Boolean(window.navigator?.standalone));
+
+    if (isStandalone) {
+      setIsApp(true);
+      setShowSplash(true);
+      const splashTimer = setTimeout(() => {
+        setShowSplash(false);
+      }, 2000);
+
+      return () => clearTimeout(splashTimer);
+    } else {
+      setIsApp(false);
+      setShowSplash(false);
+    }
+  }, []);
   const [globalVoiceModalOpen, setGlobalVoiceModalOpen] = useState(false);
   const [manualVoicePreset, setManualVoicePreset] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -411,6 +437,9 @@ function App() {
           : "bg-[#000000] text-white"
       }`}
     >
+      {/* Animated Splash Screen - rendered ONLY when opened as an installed PWA / standalone container */}
+      {isApp && <SplashScreen isLoading={showSplash} isApp={isApp} />}
+
       <input
         type="file"
         accept=".csv,.xlsx,.xls"

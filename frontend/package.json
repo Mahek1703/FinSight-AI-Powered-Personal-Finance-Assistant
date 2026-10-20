@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "prisma generate && next build",
+    "build:vite": "vite build",
+    "postinstall": "prisma generate",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@tailwindcss/vite": "^4.3.3",
     "firebase": "^12.15.0",
+    "framer-motion": "^14.3.0",
     "papaparse": "^5.5.3",
     "pdfjs-dist": "^6.3.289",
     "react": "^19.2.0",
@@ -31,6 +35,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "prisma": "^5.22.0",
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.3.0"
   }

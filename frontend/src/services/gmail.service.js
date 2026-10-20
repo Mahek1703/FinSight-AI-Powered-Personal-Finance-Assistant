@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:5000/api/gmail";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = `${API_BASE_URL}/api/gmail`;
 
 /**
  * Send the Google OAuth access token to the backend.

@@ -259,8 +259,9 @@ function AuthModal({
         }
 
         try {
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
           const gmailResponse = await fetch(
-            "http://localhost:5000/api/gmail/connect",
+            `${apiBaseUrl}/api/gmail/connect`,
             {
               method: "POST",
               headers: {

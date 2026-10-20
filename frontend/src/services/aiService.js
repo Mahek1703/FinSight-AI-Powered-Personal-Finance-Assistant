@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:5000/api/ai";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = `${API_BASE_URL}/api/ai`;
 import { scanReceiptWithGemini } from "./geminiVision.service";
 
 export const askAI = async (prompt) => {

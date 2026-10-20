@@ -1,0 +1,16 @@
+{
+  "name": "finsight-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FinSight AI - AI-Powered Personal Finance Assistant",
+  "scripts": {
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}

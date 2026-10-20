@@ -57,8 +57,9 @@ const GmailConnectionButton = ({ onTransactionsLoaded, onError, existingIds = []
               const accessToken = response.access_token;
               const currentUid = auth.currentUser?.uid || null;
 
+              const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
               const result = await fetch(
-                "http://localhost:5000/api/gmail/connect",
+                `${apiBaseUrl}/api/gmail/connect`,
                 {
                   method: "POST",
                   headers: {

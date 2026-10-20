@@ -259,7 +259,8 @@ export const scanReceiptWithGemini = async (imageFile) => {
 
   // Strategy B: Call Backend Gemini Vision OCR Proxy
   try {
-    const backendResponse = await fetch("http://localhost:5000/api/ai/scan-receipt", {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const backendResponse = await fetch(`${apiBaseUrl}/api/ai/scan-receipt`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

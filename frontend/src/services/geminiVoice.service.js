@@ -436,7 +436,8 @@ export const parseVoiceWithGemini = async (transcript = "") => {
 
   // Strategy B: Backend Gemini Voice Proxy Call
   try {
-    const backendResponse = await fetch("http://localhost:5000/api/ai/parse-voice", {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const backendResponse = await fetch(`${apiBaseUrl}/api/ai/parse-voice`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
