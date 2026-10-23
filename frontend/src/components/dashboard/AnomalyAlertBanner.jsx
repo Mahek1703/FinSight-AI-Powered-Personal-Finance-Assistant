@@ -19,6 +19,7 @@ import {
   detectAnomalies,
   dismissAnomalyId,
 } from "../../utils/AnomalyDetector";
+import { formatCurrency } from "../../config/constants";
 
 /**
  * AnomalyAlertBanner Component
@@ -189,7 +190,7 @@ export default function AnomalyAlertBanner({
                       <>
                         <span>•</span>
                         <span className="text-rose-400 font-bold">
-                          +{alert.percentageOverAverage}% vs Avg (₹{Math.round(alert.averageCategoryAmount)})
+                          +{alert.percentageOverAverage}% vs Avg ({formatCurrency(Math.round(alert.averageCategoryAmount))})
                         </span>
                       </>
                     )}

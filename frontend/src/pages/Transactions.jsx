@@ -28,8 +28,15 @@ import {
 
 
 
-const defaultExpenseCategories = ["Food", "Travel", "Shopping", "Bills", "Health", "Education", "Others"];
-const defaultIncomeCategories = ["Salary", "Freelance", "Investment", "Bonus", "Business", "Others"];
+import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  formatCurrency,
+  getCurrencySymbol,
+} from "../config/constants.js";
+
+const defaultExpenseCategories = EXPENSE_CATEGORIES;
+const defaultIncomeCategories = INCOME_CATEGORIES;
 
 const getCategoryIcon = (category = "") => {
   const cat = (category || "").toLowerCase();
@@ -318,7 +325,7 @@ function Transactions({
         <div className="p-4 rounded-2xl bg-[#08080b] border border-white/[0.06] shadow-xl space-y-1">
           <span className="text-[11px] text-zinc-400 font-medium block">Total Inflow</span>
           <strong className="text-lg sm:text-xl font-bold text-emerald-400 block">
-            ₹{totalIncome.toLocaleString("en-IN")}
+            {formatCurrency(totalIncome)}
           </strong>
           <span className="text-[10px] text-zinc-500">Income received</span>
         </div>
@@ -326,7 +333,7 @@ function Transactions({
         <div className="p-4 rounded-2xl bg-[#08080b] border border-white/[0.06] shadow-xl space-y-1">
           <span className="text-[11px] text-zinc-400 font-medium block">Total Outflow</span>
           <strong className="text-lg sm:text-xl font-bold text-rose-400 block">
-            ₹{totalExpense.toLocaleString("en-IN")}
+            {formatCurrency(totalExpense)}
           </strong>
           <span className="text-[10px] text-zinc-500">Money spent</span>
         </div>
@@ -448,7 +455,7 @@ function Transactions({
                           isIncome ? "text-emerald-400" : "text-zinc-200"
                         }`}
                       >
-                        {isIncome ? "+" : "-"} ₹{amount.toLocaleString("en-IN")}
+                        {isIncome ? "+ " : "- "}{formatCurrency(amount)}
                       </span>
                     </div>
 
@@ -503,7 +510,9 @@ function Transactions({
 
             <form onSubmit={handleSaveEdit} className="space-y-3.5">
               <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">Amount (₹)</label>
+                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
+                  Amount ({getCurrencySymbol()})
+                </label>
                 <input
                   type="number"
                   value={editingItem.amount}
@@ -612,7 +621,9 @@ function Transactions({
               </div>
 
               <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">Amount (₹)</label>
+                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
+                  Amount ({getCurrencySymbol()})
+                </label>
                 <input
                   type="number"
                   placeholder="0.00"

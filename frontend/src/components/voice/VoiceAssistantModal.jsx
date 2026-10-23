@@ -22,6 +22,7 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import { parseVoiceWithGemini } from "../../services/geminiVoice.service";
+import { formatCurrency } from "../../config/constants";
 
 const getCategoryIcon = (category = "") => {
   const cat = (category || "").toLowerCase();
@@ -215,7 +216,7 @@ export default function VoiceAssistantModal({
       await onSaveTransaction(payload);
       setState("success");
       showToast(
-        `Logged ₹${payload.amount.toLocaleString("en-IN")} for ${payload.category} via Voice AI!`,
+        `Logged ${formatCurrency(payload.amount)} for ${payload.category} via Voice AI!`,
         "success"
       );
 
@@ -420,7 +421,7 @@ export default function VoiceAssistantModal({
                   <div>
                     <span className="text-[11px] text-zinc-400 block font-medium">Parsed Amount</span>
                     <h3 className="text-2xl sm:text-3xl font-black text-white">
-                      ₹{Number(parsedResult.amount || 0).toLocaleString("en-IN")}
+                      {formatCurrency(Number(parsedResult.amount || 0))}
                     </h3>
                   </div>
 

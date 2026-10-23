@@ -4,18 +4,13 @@
  * using Google Gemini 1.5 Flash Vision API.
  */
 import { apiFetch } from "./apiClient.js";
+import {
+  buildVisionAIPrompt,
+  EXPENSE_CATEGORIES,
+  CATEGORY_KEYWORDS,
+} from "../config/constants.js";
 
-const GEMINI_PROMPT = `You are a financial receipt and invoice OCR assistant. 
-Analyze the provided receipt or invoice image carefully.
-Extract transaction details into valid JSON format with keys:
-- merchant (string: name of the store, business, or service provider)
-- date (string: transaction date formatted strictly as YYYY-MM-DD. If missing, use today's date)
-- totalAmount (number: the final total paid/due amount as a positive number)
-- category (string: one of ["Food", "Shopping", "Bills", "Travel", "Health", "Education", "Others"])
-- description (string: brief summary of items purchased or purpose)
-- paymentType (string: strictly one of ["Credit", "Debit", "Cash", "Online"])
-
-Return ONLY a clean JSON object without any markdown code fences, comments, or extra text.`;
+const GEMINI_PROMPT = buildVisionAIPrompt();
 
 /**
  * Standardize extracted category to FinSight categories
@@ -117,7 +112,7 @@ export const sanitizeAndParseGeminiResponse = (rawText) => {
   if (typeof parsed.totalAmount === "number") {
     totalAmount = Math.abs(parsed.totalAmount);
   } else if (parsed.totalAmount || parsed.amount || parsed.total) {
-    const amtStr = String(parsed.totalAmount || parsed.amount || parsed.total).replace(/[₹$€, ]/g, "");
+    const amtStr = String(parsed.totalAmount || parsed.amount || parsed.total).replace(/[\u20B9$€, ]/g, "");
     totalAmount = Math.abs(parseFloat(amtStr)) || 0;
   }
 

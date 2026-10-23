@@ -12,6 +12,7 @@ import {
   FaRobot,
 } from "react-icons/fa";
 import GmailConnectButton from "../GmailConnectionButton";
+import { getCurrencySymbol } from "../../config/constants";
 
 export default function SmartSyncWidget({
   onTransactionsLoaded = () => {},
@@ -197,7 +198,7 @@ export default function SmartSyncWidget({
           <div>
             <h4 className="text-xs font-bold text-white">Natural Language Voice Logger</h4>
             <p className="text-[11px] text-zinc-400">
-              Speak naturally: "Spent ₹250 on coffee at Starbucks via Card"
+              Speak naturally: {`"Spent ${getCurrencySymbol()}250 on coffee at Starbucks via Card"`}
             </p>
           </div>
         </div>

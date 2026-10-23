@@ -22,32 +22,13 @@ import {
   FaReceipt,
 } from "react-icons/fa";
 
-const defaultAccounts = [
-  {
-    id: "acc_cash",
-    name: "Cash",
-    type: "Cash",
-    iconType: "cash",
-    initialBalance: 0,
-    color: "emerald",
-  },
-  {
-    id: "acc_savings",
-    name: "Savings",
-    type: "Savings",
-    iconType: "savings",
-    initialBalance: 0,
-    color: "rose",
-  },
-  {
-    id: "acc_online",
-    name: "Online",
-    type: "Online",
-    iconType: "online",
-    initialBalance: 0,
-    color: "sky",
-  },
-];
+import {
+  DEFAULT_ACCOUNTS,
+  formatCurrency,
+  getCurrencySymbol,
+} from "../config/constants.js";
+
+const defaultAccounts = DEFAULT_ACCOUNTS;
 
 export default function Accounts({
   csvData = [],
@@ -321,7 +302,7 @@ export default function Accounts({
         date: transferDate,
       });
 
-      showToast(`Transferred ₹${amt.toLocaleString("en-IN")} from ${transferFrom} to ${transferTo}`, "success");
+      showToast(`Transferred ${formatCurrency(amt)} from ${transferFrom} to ${transferTo}`, "success");
       setTransferModal(false);
     } catch (err) {
       showToast("Transfer failed: " + err.message, "error");
@@ -414,7 +395,7 @@ export default function Accounts({
 
         {/* All Accounts Net Balance */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-          All Accounts ₹{grandTotalBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          All Accounts {formatCurrency(grandTotalBalance)}
         </h1>
 
         {/* EXPENSE SO FAR / INCOME SO FAR METRICS */}
@@ -424,7 +405,7 @@ export default function Accounts({
               EXPENSE SO FAR
             </span>
             <span className="text-base sm:text-lg font-extrabold text-rose-400 block">
-              ₹{totalExpense.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(totalExpense)}
             </span>
           </div>
 
@@ -435,7 +416,7 @@ export default function Accounts({
               INCOME SO FAR
             </span>
             <span className="text-base sm:text-lg font-extrabold text-emerald-400 block">
-              ₹{totalIncome.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(totalIncome)}
             </span>
           </div>
         </div>
@@ -489,12 +470,12 @@ export default function Accounts({
                     <div className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                       <span className="text-zinc-400 font-normal">Balance:</span>
                       <span className={balInfo.currentBalance < 0 ? "text-rose-400" : "text-emerald-400"}>
-                        ₹{balInfo.currentBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatCurrency(balInfo.currentBalance)}
                       </span>
                     </div>
 
                     <p className="text-[10px] text-zinc-500 hidden sm:block">
-                      {balInfo.txCount} entries · +₹{balInfo.income.toLocaleString("en-IN")} in / -₹{balInfo.expense.toLocaleString("en-IN")} out
+                      {balInfo.txCount} entries · +{formatCurrency(balInfo.income)} in / -{formatCurrency(balInfo.expense)} out
                     </p>
                   </div>
                 </div>
@@ -596,10 +577,10 @@ export default function Accounts({
                     {selectedAccountForTx.name} Transactions
                   </h3>
                   <p className="text-xs text-emerald-400 font-bold">
-                    Current Balance: ₹
-                    {(
+                    Current Balance:{" "}
+                    {formatCurrency(
                       accountBalances[selectedAccountForTx.id]?.currentBalance || 0
-                    ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    )}
                   </p>
                 </div>
               </div>
@@ -669,7 +650,7 @@ export default function Accounts({
                           isIncome ? "text-emerald-400" : "text-zinc-200"
                         }`}
                       >
-                        {isIncome ? "+" : "-"} ₹{amt.toLocaleString("en-IN")}
+                        {isIncome ? "+" : "-"} {formatCurrency(amt)}
                       </span>
                     </div>
                   );
@@ -761,7 +742,7 @@ export default function Accounts({
 
               <div>
                 <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Initial Starting Balance (₹)
+                  Initial Starting Balance ({getCurrencySymbol()})
                 </label>
                 <input
                   type="number"
@@ -849,7 +830,7 @@ export default function Accounts({
 
               <div>
                 <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Transfer Amount (₹)
+                  Transfer Amount ({getCurrencySymbol()})
                 </label>
                 <input
                   type="number"

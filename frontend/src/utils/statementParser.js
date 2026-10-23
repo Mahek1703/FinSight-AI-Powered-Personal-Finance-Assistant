@@ -4,7 +4,9 @@ import * as pdfjsLib from "pdfjs-dist";
 import { collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebase";
 
-// Configure PDF.js Worker for modern Vite / Browser environments
+import { MAX_FILE_SIZE_BYTES } from "../config/constants.js";
+
+// Configure PDF.js Worker locally for modern Vite / Browser environments
 try {
   if (typeof window !== "undefined" && pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -13,14 +15,10 @@ try {
     ).href;
   }
 } catch (workerErr) {
-  console.warn("Could not set local pdfjs worker URL, using CDN fallback:", workerErr);
-  if (pdfjsLib?.GlobalWorkerOptions) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || "4.10.38"}/build/pdf.worker.min.mjs`;
-  }
+  console.warn("Could not set local pdfjs worker URL:", workerErr);
 }
 
-/** Max client-side statement file size allowed: 10 MB */
-export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+export { MAX_FILE_SIZE_BYTES };
 
 /** Strictly supported document extensions */
 export const ALLOWED_EXTENSIONS = ["pdf", "csv", "xlsx", "xls", "txt"];
@@ -84,7 +82,7 @@ export const cleanAmount = (raw) => {
   }
 
   // Remove currency symbols, commas, +, -, Dr, Cr, whitespace
-  const cleaned = str.replace(/[₹$€£¥INR|Rs\.?|,|\s|\+|Dr|Cr|dr|cr|-]/gi, "");
+  const cleaned = str.replace(/[\u20B9$€£¥INR|Rs\.?|,|\s|\+|Dr|Cr|dr|cr|-]/gi, "");
   const num = parseFloat(cleaned);
   return Number.isNaN(num) ? 0 : Math.abs(num);
 };
@@ -334,7 +332,7 @@ export const parseLineToTransaction = (line, fallbackDate = null) => {
   if (!trimmed || trimmed.length < 2) return null;
 
   // 1. Extract Amount using regex: captures numbers with optional commas/decimals
-  const amountMatch = trimmed.match(/(?:rs\.?|₹|\$)?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i);
+  const amountMatch = trimmed.match(/(?:rs\.?|[\u20B9]|\$)?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i);
   if (!amountMatch) return null;
 
   const rawAmtStr = amountMatch[1] || amountMatch[0];

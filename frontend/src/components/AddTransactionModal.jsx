@@ -17,27 +17,10 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import { scanReceiptWithGemini } from "../services/geminiVision.service";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCurrencySymbol } from "../config/constants";
 
-
-const expenseCategories = [
-  "Food",
-  "Bills",
-  "Fun",
-  "Shopping",
-  "Health",
-  "Travel",
-  "Education",
-  "Others",
-];
-
-const incomeCategories = [
-  "Salary",
-  "Business",
-  "Freelance",
-  "Investment",
-  "Bonus",
-  "Others",
-];
+const expenseCategories = EXPENSE_CATEGORIES;
+const incomeCategories = INCOME_CATEGORIES;
 
 const accountTypes = ["Cash", "Bank", "Card", "Online", "Savings"];
 
@@ -349,7 +332,7 @@ export default function AddTransactionModal({
               htmlFor="tx-amount"
               className="block text-zinc-400 font-medium text-xs mb-1.5"
             >
-              ₹ Amount
+              {getCurrencySymbol()} Amount
             </label>
             <input
               id="tx-amount"

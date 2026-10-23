@@ -12,6 +12,7 @@ import {
   FaCheckCircle,
   FaChartPie,
 } from "react-icons/fa";
+import { formatCurrency } from "../../config/constants";
 
 export default function BudgetsGoalsWidget({
   budgets = [],
@@ -176,8 +177,8 @@ export default function BudgetsGoalsWidget({
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-zinc-400">
-                        <span>Spent: ₹{spent.toLocaleString("en-IN")}</span>
-                        <span>Limit: ₹{limit.toLocaleString("en-IN")}</span>
+                        <span>Spent: {formatCurrency(spent)}</span>
+                        <span>Limit: {formatCurrency(limit)}</span>
                       </div>
                     </div>
                   );
@@ -258,8 +259,8 @@ export default function BudgetsGoalsWidget({
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-zinc-400">
-                        <span>Saved: ₹{current.toLocaleString("en-IN")}</span>
-                        <span>Target: ₹{target.toLocaleString("en-IN")}</span>
+                        <span>Saved: {formatCurrency(current)}</span>
+                        <span>Target: {formatCurrency(target)}</span>
                       </div>
                     </div>
                   );
@@ -315,7 +316,7 @@ export default function BudgetsGoalsWidget({
 
                 <div className="flex items-center gap-3">
                   <span className="text-xs sm:text-sm font-bold text-white">
-                    ₹{Number(bill.amount || 0).toLocaleString("en-IN")}
+                    {formatCurrency(Number(bill.amount || 0))}
                   </span>
 
                   <button

@@ -24,6 +24,11 @@ import {
 } from "react-icons/fa";
 import CashFlowForecastCard from "../components/dashboard/CashFlowForecastCard";
 import {
+  formatCurrency,
+  getCurrencySymbol,
+  HEATMAP_THRESHOLDS,
+} from "../config/constants.js";
+import {
 
   ResponsiveContainer,
   BarChart,
@@ -178,7 +183,7 @@ function Reports({
   const [autoRuleInput, setAutoRuleInput] = useState("");
   const [rules, setRules] = useState([]);
 
-  const money = (val) => `₹${Number(val || 0).toLocaleString("en-IN")}`;
+  const money = (val) => formatCurrency(val);
 
   // Extract all available years from transactions + current year
   const availableYears = useMemo(() => {
@@ -678,15 +683,12 @@ function Reports({
               let dotBadge = null;
 
               if (item.level === "low") {
-                // < ₹500 Low -> Vivid Green Tint
                 bgStyle = "bg-[#064e3b]/50 border-2 border-emerald-500 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)] hover:bg-[#064e3b]/80";
                 dotBadge = "bg-emerald-400 shadow-[0_0_6px_#10b981]";
               } else if (item.level === "medium") {
-                // ₹500-2K Medium -> Vivid Amber/Orange Tint
                 bgStyle = "bg-[#78350f]/50 border-2 border-amber-500 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)] hover:bg-[#78350f]/80";
                 dotBadge = "bg-amber-400 shadow-[0_0_6px_#f59e0b]";
               } else if (item.level === "high") {
-                // > ₹2,000 High -> Vivid Rose/Crimson Tint
                 bgStyle = "bg-[#881337]/50 border-2 border-rose-500 text-rose-300 shadow-[0_0_14px_rgba(244,63,94,0.35)] hover:bg-[#881337]/80";
                 dotBadge = "bg-rose-400 shadow-[0_0_6px_#f43f5e]";
               }
@@ -714,7 +716,7 @@ function Reports({
 
                   {item.amount > 0 ? (
                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-tight truncate max-w-full font-mono">
-                      ₹{item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount}
+                      {getCurrencySymbol()}{item.amount >= 1000 ? `${(item.amount / 1000).toFixed(1)}k` : item.amount}
                     </span>
                   ) : (
                     <span className="text-[9px] text-zinc-600 font-normal">
@@ -726,23 +728,23 @@ function Reports({
             })}
           </div>
 
-          {/* Heatmap Legend - Exact Visual Replica of user's uploaded image */}
+          {/* Heatmap Legend */}
           <div className="flex items-center justify-between pt-4 border-t border-white/[0.06] text-xs text-zinc-400 flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full bg-[#18181f] border border-zinc-700 inline-block" />
-              <span className="text-zinc-300">₹0 No spend</span>
+              <span className="text-zinc-300">{formatCurrency(HEATMAP_THRESHOLDS.NO_SPEND)} No spend</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full bg-[#064e3b] border border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.7)] inline-block" />
-              <span className="text-emerald-400 font-semibold">&lt; ₹500 Low</span>
+              <span className="text-emerald-400 font-semibold">&lt; {formatCurrency(HEATMAP_THRESHOLDS.LOW)} Low</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full bg-[#78350f] border border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.7)] inline-block" />
-              <span className="text-amber-400 font-semibold">₹500-2K Medium</span>
+              <span className="text-amber-400 font-semibold">{formatCurrency(HEATMAP_THRESHOLDS.LOW)}-{HEATMAP_THRESHOLDS.MEDIUM >= 1000 ? `${HEATMAP_THRESHOLDS.MEDIUM / 1000}k` : formatCurrency(HEATMAP_THRESHOLDS.MEDIUM)} Medium</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full bg-[#881337] border border-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.7)] inline-block" />
-              <span className="text-rose-400 font-semibold">&gt; ₹2,000 High</span>
+              <span className="text-rose-400 font-semibold">&gt; {formatCurrency(HEATMAP_THRESHOLDS.MEDIUM)} High</span>
             </div>
           </div>
 
@@ -787,7 +789,7 @@ function Reports({
                           </div>
                         </div>
                         <span className={`font-bold ${isInc ? "text-emerald-400" : "text-rose-400"}`}>
-                          {isInc ? "+" : "-"} ₹{Number(tx.Amount || tx.amount || 0).toLocaleString("en-IN")}
+                          {isInc ? "+ " : "- "}{formatCurrency(tx.Amount || tx.amount || 0)}
                         </span>
                       </div>
                     );
@@ -847,7 +849,7 @@ function Reports({
                       color: "#fff",
                       fontSize: "12px",
                     }}
-                    formatter={(val) => [`₹${Number(val).toLocaleString("en-IN")}`, "Amount"]}
+                    formatter={(val) => [formatCurrency(val), "Amount"]}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -869,7 +871,7 @@ function Reports({
                       {c.name}
                     </span>
                     <span className="text-[10px] text-zinc-400">
-                      ₹{c.value.toLocaleString("en-IN")}
+                      {formatCurrency(c.value)}
                     </span>
                   </div>
                 </div>
@@ -897,7 +899,7 @@ function Reports({
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={yearlyTrendData}>
                   <XAxis dataKey="month" stroke="#71717a" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `₹${v >= 1000 ? `${v / 1000}k` : v}`} />
+                  <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `${getCurrencySymbol()}${v >= 1000 ? `${v / 1000}k` : v}`} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "#0d0d12",
@@ -906,7 +908,7 @@ function Reports({
                       color: "#fff",
                       fontSize: "12px",
                     }}
-                    formatter={(val) => [`₹${Number(val).toLocaleString("en-IN")}`]}
+                    formatter={(val) => [formatCurrency(val)]}
                   />
                   <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "6px" }} />
                   <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />

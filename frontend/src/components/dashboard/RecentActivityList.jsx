@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { formatCurrency } from "../../config/constants";
 import {
   FaUtensils,
   FaShoppingBag,
@@ -239,7 +240,7 @@ export default function RecentActivityList({
                         isIncome ? "text-emerald-400" : "text-zinc-200"
                       }`}
                     >
-                      {isIncome ? "+" : "-"} ₹{amount.toLocaleString("en-IN")}
+                      {isIncome ? "+" : "-"} {formatCurrency(amount)}
                     </div>
                   </div>
 

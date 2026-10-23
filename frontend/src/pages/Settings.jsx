@@ -18,12 +18,14 @@ import {
   FaDatabase,
 } from "react-icons/fa";
 
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "../config/constants.js";
+
 const KEY = "finsightCommandSettings";
 
 const defaults = {
   name: "FinSight User",
   email: "user@finsight.ai",
-  currency: "INR (₹)",
+  currency: DEFAULT_CURRENCY,
   dateFormat: "DD/MM/YYYY",
   weekStart: "Monday",
   transactionAlerts: true,
@@ -167,10 +169,11 @@ function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {},
                 onChange={(e) => update("currency", e.target.value)}
                 className="w-full bg-[#0c0c10] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
               >
-                <option value="INR (₹)">INR (₹ - Indian Rupee)</option>
-                <option value="USD ($)">USD ($ - US Dollar)</option>
-                <option value="EUR (€)">EUR (€ - Euro)</option>
-                <option value="GBP (£)">GBP (£ - British Pound)</option>
+                {SUPPORTED_CURRENCIES.map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

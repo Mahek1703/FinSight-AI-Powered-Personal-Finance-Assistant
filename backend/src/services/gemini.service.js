@@ -4,6 +4,26 @@ const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 /**
+ * Returns prioritized array of Gemini models from environment settings
+ */
+const getModelCandidates = () => {
+  const primaryModel = (process.env.GEMINI_MODEL || "").trim();
+  const fallbacksEnv = (process.env.GEMINI_FALLBACK_MODELS || "").trim();
+  const fallbacks = fallbacksEnv
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+
+  const list = [primaryModel, ...fallbacks].filter(Boolean);
+  if (list.length === 0) {
+    throw new Error(
+      "GEMINI_MODEL is not configured in backend environment variables. Please set GEMINI_MODEL in your environment."
+    );
+  }
+  return Array.from(new Set(list));
+};
+
+/**
  * Generates an AI response from Gemini given a prompt with fallback models.
  *
  * @param {string} prompt - The text prompt or financial question
@@ -19,13 +39,7 @@ export const generateAIResponse = async (prompt) => {
     return "FinSight AI Advisor: Discretionary cash flow optimization is active. Channel 50% into Nifty 50 Index funds, 25% to debt/FD reserve, and 25% to emergency buffer.";
   }
 
-  const modelCandidates = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-pro",
-  ];
-
+  const modelCandidates = getModelCandidates();
   let lastError = null;
 
   for (const modelName of modelCandidates) {
@@ -40,7 +54,7 @@ export const generateAIResponse = async (prompt) => {
     }
   }
 
-  // If all API calls fail (e.g. invalid API key or network block), return graceful structured financial guidance
+  // If all API calls fail, return graceful financial insight notice
   return `💡 FinSight AI Financial Insight:
 • Cash Flow Optimization: Automate 20% savings within 24h of income credit.
 • Allocation Recommendation: 50% Index Funds, 25% Emergency Buffer, 25% High-Yield Recurring Reserve.
@@ -48,7 +62,7 @@ export const generateAIResponse = async (prompt) => {
 };
 
 /**
- * Parses and extracts receipt/invoice details using Gemini 1.5 Flash Vision OCR
+ * Parses and extracts receipt/invoice details using Gemini Vision OCR
  *
  * @param {string} base64Data - Raw base64 string of the image
  * @param {string} mimeType - Image mime type (e.g. "image/jpeg", "image/png")
@@ -62,12 +76,7 @@ export const scanReceiptImage = async (base64Data, mimeType = "image/jpeg", cust
 
   const prompt = customPrompt || `Extract transaction details into valid JSON format with keys: merchant, date (YYYY-MM-DD), totalAmount (number), category, description, paymentType (Credit/Debit/Cash). Return ONLY raw JSON without markdown or extra explanations.`;
 
-  const modelCandidates = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-  ];
-
+  const modelCandidates = getModelCandidates();
   let lastError = null;
 
   for (const modelName of modelCandidates) {
@@ -106,9 +115,9 @@ export const scanReceiptImage = async (base64Data, mimeType = "image/jpeg", cust
 };
 
 /**
- * Parses spoken voice transcript (English / Hindi / Hinglish) into structured transaction JSON using Gemini 1.5 Flash.
+ * Parses spoken voice transcript (English / Hindi / Hinglish) into structured transaction JSON using Gemini.
  *
- * @param {string} transcript - The spoken transcript text (e.g. "Swiggy par 450 rupees kharch kiye dinner ke liye")
+ * @param {string} transcript - The spoken transcript text
  * @returns {Promise<Object>} Extracted structured transaction JSON
  */
 export const parseVoiceTranscript = async (transcript) => {
@@ -131,12 +140,7 @@ Extract transaction details into valid JSON with keys:
 
 Return ONLY valid JSON without any markdown fences, backticks, or extra commentary.`;
 
-  const modelCandidates = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-  ];
-
+  const modelCandidates = getModelCandidates();
   let lastError = null;
 
   for (const modelName of modelCandidates) {
@@ -160,11 +164,11 @@ Return ONLY valid JSON without any markdown fences, backticks, or extra commenta
       return JSON.parse(cleaned);
     } catch (err) {
       lastError = err;
-      console.warn(`Voice Parsing with model ${modelName} error:`, err.message || err);
+      console.warn(`Voice NLP parsing with model ${modelName} error:`, err.message || err);
     }
   }
 
-  throw lastError || new Error("Failed to parse voice transcript with Gemini API.");
+  throw lastError || new Error("Failed to parse voice transcript with Gemini.");
 };
 
 export default {

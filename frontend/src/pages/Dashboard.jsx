@@ -49,6 +49,7 @@ import {
   FaEnvelopeOpenText,
   FaSyncAlt,
 } from "react-icons/fa";
+import { formatCurrency, getCurrencySymbol } from "../config/constants.js";
 
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -543,7 +544,7 @@ function DashboardContent({
 
     setNewBudgetLimit("");
     setAddBudgetModalOpen(false);
-    showToast(`Monthly budget for ${newBudgetCategory} set to ₹${limitAmt}!`, "success");
+    showToast(`Monthly budget for ${newBudgetCategory} set to ${formatCurrency(limitAmt)}!`, "success");
   };
 
   return (
@@ -729,7 +730,7 @@ function DashboardContent({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Target Amount (₹)
+                    Target Amount ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -742,7 +743,7 @@ function DashboardContent({
                 </div>
                 <div>
                   <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Current Saved (₹)
+                    Current Saved ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -820,7 +821,7 @@ function DashboardContent({
 
               <div>
                 <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Monthly Spending Limit (₹)
+                  Monthly Spending Limit ({getCurrencySymbol()})
                 </label>
                 <input
                   type="number"

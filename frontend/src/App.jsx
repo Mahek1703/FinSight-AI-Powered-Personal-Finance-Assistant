@@ -20,6 +20,7 @@ import {
   subscribeFinanceData,
   updateTransaction,
 } from "./services/firestore";
+import { formatCurrency } from "./config/constants";
 import {
   FaCheckCircle,
   FaExclamationCircle,
@@ -429,7 +430,7 @@ function App() {
     const title =
       transaction.Category || transaction.category || "this transaction";
     const amt = transaction.Amount || transaction.amount;
-    const confirmDelete = window.confirm(`Delete "${title}" for ₹${amt}?`);
+    const confirmDelete = window.confirm(`Delete "${title}" for ${formatCurrency(amt)}?`);
     if (!confirmDelete) return false;
 
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
