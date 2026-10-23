@@ -19,8 +19,9 @@ import {
   deleteTransaction,
   subscribeFinanceData,
   updateTransaction,
+  migrateLocalStorageToFirestore,
 } from "./services/firestore";
-import { formatCurrency } from "./config/constants";
+import { formatCurrency, DEFAULT_ACCOUNTS } from "./config/constants";
 import {
   FaCheckCircle,
   FaExclamationCircle,
@@ -113,6 +114,7 @@ function App() {
   const [manualVoicePreset, setManualVoicePreset] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [themeMode, setThemeMode] = useState(
     () => localStorage.getItem("finsightTheme") || "dark"
   );
@@ -185,6 +187,7 @@ function App() {
     let currentFirestoreUnsub = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setAuthLoading(false);
       // 1. Immediately unsubscribe from previous user's Firestore listener
       if (typeof currentFirestoreUnsub === "function") {
         currentFirestoreUnsub();
@@ -195,6 +198,9 @@ function App() {
         setIsLoggedIn(true);
         setCurrentUser(user);
         setLoadingData(true);
+
+        // One-time localStorage migration to Firestore & default account seeding
+        migrateLocalStorageToFirestore(user.uid, DEFAULT_ACCOUNTS);
 
         // 2. Subscribe strictly to authenticated user's transactions (users/{user.uid}/transactions)
         currentFirestoreUnsub = subscribeFinanceData(
@@ -281,32 +287,17 @@ function App() {
     }
 
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
-
-    if (uid) {
-      try {
-        await Promise.all(normalizedRows.map((row) => addImportedTransaction(row, uid)));
-        showToast(`${normalizedRows.length} records synced to Firestore!`, "success");
-      } catch (err) {
-        console.error("Firestore Error:", err);
-        showToast(
-          `Imported ${normalizedRows.length} records to local state (Firestore: ${err.message})`,
-          "warning"
-        );
-      }
+    if (!uid) {
+      showToast("Please log in to import transactions.", "error");
+      return;
     }
 
-    setTransactions((prev) => {
-      const newItems = normalizedRows.map((r, idx) => ({
-        ...r,
-        id: `import_${Date.now()}_${idx}`,
-        userId: uid || null,
-        createdAt: new Date().toISOString(),
-      }));
-      return [...newItems, ...prev];
-    });
-
-    if (!uid) {
-      showToast(`${normalizedRows.length} records imported successfully!`, "success");
+    try {
+      await Promise.all(normalizedRows.map((row) => addImportedTransaction(row, uid)));
+      showToast(`${normalizedRows.length} records saved to Firestore!`, "success");
+    } catch (err) {
+      console.error("Firestore import error:", err);
+      showToast(`Import failed: ${err.message || String(err)}`, "error");
     }
   };
 
@@ -351,12 +342,17 @@ function App() {
 
   const handleSaveTransaction = async (transaction, editingTransaction = null) => {
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
+    if (!uid) {
+      showToast("Please log in to save transactions.", "error");
+      return false;
+    }
+
     const isIncome = String(transaction.type || "").toLowerCase() === "income";
     const type = isIncome ? "Income" : "Expense";
     const amount = Number(transaction.amount);
 
     const payload = {
-      userId: uid || null,
+      userId: uid,
       type,
       amount,
       date: transaction.date || new Date().toISOString().slice(0, 10),
@@ -368,61 +364,36 @@ function App() {
     };
 
     if (editingTransaction) {
-      const targetId = editingTransaction.firestoreId || editingTransaction.id;
-
-      if (uid && editingTransaction.firestoreId) {
-        try {
-          const res = await updateTransaction(
-            { ...editingTransaction, ...payload },
-            uid
-          );
-          if (!res.success) {
-            console.warn("Firestore update fallback:", res.error);
-          }
-        } catch (err) {
-          console.warn("Firestore update exception:", err);
-        }
-      }
-
-      setTransactions((prev) => {
-        return prev.map((item) =>
-          item.id === targetId || item.firestoreId === targetId
-            ? { ...item, ...payload, id: item.id || targetId }
-            : item
+      try {
+        const res = await updateTransaction(
+          { ...editingTransaction, ...payload },
+          uid
         );
-      });
-
-      showToast("Transaction updated successfully!", "success");
-      return true;
-    } else {
-      let firestoreOk = false;
-      let newDocId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-
-      if (uid) {
-        try {
-          const res = await addTransaction(payload, uid);
-          if (res.success) {
-            firestoreOk = true;
-            if (res.id) newDocId = res.id;
-          } else {
-            console.warn("Firestore write fallback:", res.error);
-          }
-        } catch (err) {
-          console.warn("Firestore write exception:", err);
+        if (res.success) {
+          showToast("Transaction updated successfully!", "success");
+          return true;
+        } else {
+          showToast(`Failed to update transaction: ${res.error}`, "error");
+          return false;
         }
+      } catch (err) {
+        showToast(`Failed to update transaction: ${err.message || String(err)}`, "error");
+        return false;
       }
-
-      const newTx = {
-        ...payload,
-        id: newDocId,
-        firestoreId: firestoreOk ? newDocId : null,
-        createdAt: new Date().toISOString(),
-      };
-
-      setTransactions((prev) => [newTx, ...prev]);
-
-      showToast("Transaction saved successfully!", "success");
-      return true;
+    } else {
+      try {
+        const res = await addTransaction(payload, uid);
+        if (res.success) {
+          showToast("Transaction saved successfully!", "success");
+          return true;
+        } else {
+          showToast(`Failed to save transaction: ${res.error}`, "error");
+          return false;
+        }
+      } catch (err) {
+        showToast(`Failed to save transaction: ${err.message || String(err)}`, "error");
+        return false;
+      }
     }
   };
 
@@ -434,24 +405,24 @@ function App() {
     if (!confirmDelete) return false;
 
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
-    const targetId = transaction.firestoreId || transaction.id;
-
-    if (uid && transaction.firestoreId) {
-      const res = await deleteTransaction(transaction, uid);
-      if (!res.success) {
-        console.error("Firestore Error:", res.error);
-      }
+    if (!uid) {
+      showToast("Please log in to delete transactions.", "error");
+      return false;
     }
 
-    setTransactions((prev) => {
-      return prev.filter(
-        (item) =>
-          (item.firestoreId || item.id) !== targetId && item.id !== targetId
-      );
-    });
-
-    showToast("Transaction deleted.", "info");
-    return true;
+    try {
+      const res = await deleteTransaction(transaction, uid);
+      if (res.success) {
+        showToast("Transaction deleted.", "info");
+        return true;
+      } else {
+        showToast(`Failed to delete transaction: ${res.error}`, "error");
+        return false;
+      }
+    } catch (err) {
+      showToast(`Failed to delete transaction: ${err.message || String(err)}`, "error");
+      return false;
+    }
   };
 
   return (
@@ -520,6 +491,7 @@ function App() {
             csvData={csvData}
             loadingData={loadingData}
             isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
             currentUser={currentUser}
             setShowForm={setShowForm}
             uploadedFiles={uploadedFiles}
@@ -540,6 +512,7 @@ function App() {
             csvData={csvData}
             loadingData={loadingData}
             isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
             currentUser={currentUser}
             setShowForm={setShowForm}
             uploadedFiles={uploadedFiles}

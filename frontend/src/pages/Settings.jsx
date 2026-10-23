@@ -19,8 +19,7 @@ import {
 } from "react-icons/fa";
 
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "../config/constants.js";
-
-const KEY = "finsightCommandSettings";
+import { subscribeSettings, saveSettings } from "../services/firestore.js";
 
 const defaults = {
   name: "FinSight User",
@@ -36,24 +35,23 @@ const defaults = {
 
 function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {}, showToast = () => {} }) {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState(() => {
-    try {
-      return { ...defaults, ...JSON.parse(localStorage.getItem(KEY)) };
-    } catch {
-      return defaults;
-    }
-  });
+  const [settings, setSettings] = useState(defaults);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(settings));
-    } catch (e) {
-      console.warn("Storage error:", e);
-    }
-  }, [settings]);
+    if (!currentUser?.uid) return;
+    const unsub = subscribeSettings(currentUser.uid, (pref) => {
+      if (pref) {
+        setSettings((prev) => ({ ...prev, ...pref }));
+      }
+    });
+    return unsub;
+  }, [currentUser]);
 
-  const update = (key, value) => {
+  const update = async (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+    if (currentUser?.uid) {
+      await saveSettings({ [key]: value }, currentUser.uid);
+    }
   };
 
   const toggle = (key) => {

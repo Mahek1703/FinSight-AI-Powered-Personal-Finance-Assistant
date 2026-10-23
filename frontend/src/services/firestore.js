@@ -3,10 +3,12 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
@@ -737,5 +739,524 @@ export const subscribeFinanceData = (param1, param2, param3) => {
       onError(err);
     }
     return () => {};
+  }
+};
+
+// ==========================================
+// ACCOUNTS CRUD & REAL-TIME SUBSCRIPTION
+// Scoped under users/{uid}/accounts
+// ==========================================
+
+export const subscribeAccounts = (uid, onData, onError) => {
+  const activeUid = getActiveUid(uid);
+  if (!activeUid) {
+    if (typeof onData === "function") onData([]);
+    return () => {};
+  }
+
+  const colRef = collection(db, "users", activeUid, "accounts");
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items = snapshot.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        firestoreId: d.id,
+      }));
+      if (typeof onData === "function") onData(items);
+    },
+    (err) => {
+      console.error("Firestore subscribeAccounts Error:", err);
+      if (typeof onError === "function") onError(err);
+    }
+  );
+};
+
+export const saveAccount = async (accountData = {}, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid) return { success: false, error: "Authentication required" };
+
+  try {
+    const accountId = String(accountData.firestoreId || accountData.id || "").trim();
+    const payload = {
+      name: accountData.name || "Main Account",
+      type: accountData.type || "Bank",
+      iconType: accountData.iconType || "card",
+      initialBalance: Number(accountData.initialBalance) || 0,
+      color: accountData.color || "emerald",
+      updatedAt: serverTimestamp(),
+    };
+
+    if (accountId) {
+      const docRef = doc(db, "users", uid, "accounts", accountId);
+      await setDoc(docRef, { ...payload, id: accountId, firestoreId: accountId }, { merge: true });
+      return { success: true, id: accountId };
+    } else {
+      const colRef = collection(db, "users", uid, "accounts");
+      const docRef = await addDoc(colRef, { ...payload, createdAt: serverTimestamp() });
+      return { success: true, id: docRef.id };
+    }
+  } catch (err) {
+    console.error("Firestore saveAccount Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+export const deleteAccount = async (accountId, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid || !accountId) return { success: false, error: "Missing parameters" };
+
+  try {
+    const docRef = doc(db, "users", uid, "accounts", String(accountId));
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Firestore deleteAccount Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+// ==========================================
+// BUDGETS CRUD & REAL-TIME SUBSCRIPTION
+// Scoped under users/{uid}/budgets
+// ==========================================
+
+export const subscribeBudgets = (uid, onData, onError) => {
+  const activeUid = getActiveUid(uid);
+  if (!activeUid) {
+    if (typeof onData === "function") onData([]);
+    return () => {};
+  }
+
+  const colRef = collection(db, "users", activeUid, "budgets");
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items = snapshot.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        firestoreId: d.id,
+      }));
+      if (typeof onData === "function") onData(items);
+    },
+    (err) => {
+      console.error("Firestore subscribeBudgets Error:", err);
+      if (typeof onError === "function") onError(err);
+    }
+  );
+};
+
+export const saveBudget = async (budgetData = {}, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid) return { success: false, error: "Authentication required" };
+
+  try {
+    const budgetId = String(
+      budgetData.firestoreId ||
+      budgetData.id ||
+      (budgetData.category ? budgetData.category.toLowerCase().replace(/[^a-z0-9]/g, "_") : "")
+    ).trim();
+
+    const payload = {
+      category: budgetData.category || "General",
+      limit: Number(budgetData.limit) || 0,
+      period: budgetData.period || "monthly",
+      updatedAt: serverTimestamp(),
+    };
+
+    if (budgetId) {
+      const docRef = doc(db, "users", uid, "budgets", budgetId);
+      await setDoc(docRef, { ...payload, id: budgetId, firestoreId: budgetId }, { merge: true });
+      return { success: true, id: budgetId };
+    } else {
+      const colRef = collection(db, "users", uid, "budgets");
+      const docRef = await addDoc(colRef, { ...payload, createdAt: serverTimestamp() });
+      return { success: true, id: docRef.id };
+    }
+  } catch (err) {
+    console.error("Firestore saveBudget Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+export const deleteBudget = async (budgetId, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid || !budgetId) return { success: false, error: "Missing parameters" };
+
+  try {
+    const docRef = doc(db, "users", uid, "budgets", String(budgetId));
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Firestore deleteBudget Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+// ==========================================
+// GOALS CRUD & REAL-TIME SUBSCRIPTION
+// Scoped under users/{uid}/goals
+// ==========================================
+
+export const subscribeGoals = (uid, onData, onError) => {
+  const activeUid = getActiveUid(uid);
+  if (!activeUid) {
+    if (typeof onData === "function") onData([]);
+    return () => {};
+  }
+
+  const colRef = collection(db, "users", activeUid, "goals");
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items = snapshot.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        firestoreId: d.id,
+      }));
+      if (typeof onData === "function") onData(items);
+    },
+    (err) => {
+      console.error("Firestore subscribeGoals Error:", err);
+      if (typeof onError === "function") onError(err);
+    }
+  );
+};
+
+export const saveGoal = async (goalData = {}, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid) return { success: false, error: "Authentication required" };
+
+  try {
+    const goalId = String(goalData.firestoreId || goalData.id || "").trim();
+    const payload = {
+      name: goalData.name || "Goal",
+      targetAmount: Number(goalData.targetAmount ?? goalData.target) || 0,
+      currentAmount: Number(goalData.currentAmount ?? goalData.current) || 0,
+      deadline: goalData.deadline || "2026-12-31",
+      color: goalData.color || "#10b981",
+      updatedAt: serverTimestamp(),
+    };
+
+    if (goalId) {
+      const docRef = doc(db, "users", uid, "goals", goalId);
+      await setDoc(docRef, { ...payload, id: goalId, firestoreId: goalId }, { merge: true });
+      return { success: true, id: goalId };
+    } else {
+      const colRef = collection(db, "users", uid, "goals");
+      const docRef = await addDoc(colRef, { ...payload, createdAt: serverTimestamp() });
+      return { success: true, id: docRef.id };
+    }
+  } catch (err) {
+    console.error("Firestore saveGoal Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+export const deleteGoal = async (goalId, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid || !goalId) return { success: false, error: "Missing parameters" };
+
+  try {
+    const docRef = doc(db, "users", uid, "goals", String(goalId));
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Firestore deleteGoal Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+// ==========================================
+// BILLS CRUD & REAL-TIME SUBSCRIPTION
+// Scoped under users/{uid}/bills
+// ==========================================
+
+export const subscribeBills = (uid, onData, onError) => {
+  const activeUid = getActiveUid(uid);
+  if (!activeUid) {
+    if (typeof onData === "function") onData([]);
+    return () => {};
+  }
+
+  const colRef = collection(db, "users", activeUid, "bills");
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items = snapshot.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        firestoreId: d.id,
+      }));
+      if (typeof onData === "function") onData(items);
+    },
+    (err) => {
+      console.error("Firestore subscribeBills Error:", err);
+      if (typeof onError === "function") onError(err);
+    }
+  );
+};
+
+export const saveBill = async (billData = {}, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid) return { success: false, error: "Authentication required" };
+
+  try {
+    const billId = String(billData.firestoreId || billData.id || "").trim();
+    const payload = {
+      name: billData.name || "Bill",
+      amount: Number(billData.amount) || 0,
+      dueDate: billData.dueDate || "Due soon",
+      paid: Boolean(billData.paid),
+      updatedAt: serverTimestamp(),
+    };
+
+    if (billId) {
+      const docRef = doc(db, "users", uid, "bills", billId);
+      await setDoc(docRef, { ...payload, id: billId, firestoreId: billId }, { merge: true });
+      return { success: true, id: billId };
+    } else {
+      const colRef = collection(db, "users", uid, "bills");
+      const docRef = await addDoc(colRef, { ...payload, createdAt: serverTimestamp() });
+      return { success: true, id: docRef.id };
+    }
+  } catch (err) {
+    console.error("Firestore saveBill Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+export const deleteBill = async (billId, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid || !billId) return { success: false, error: "Missing parameters" };
+
+  try {
+    const docRef = doc(db, "users", uid, "bills", String(billId));
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Firestore deleteBill Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+// ==========================================
+// SETTINGS / PREFERENCES
+// Scoped under users/{uid}/settings/preferences
+// ==========================================
+
+export const subscribeSettings = (uid, onData, onError) => {
+  const activeUid = getActiveUid(uid);
+  if (!activeUid) {
+    if (typeof onData === "function") onData(null);
+    return () => {};
+  }
+
+  const docRef = doc(db, "users", activeUid, "settings", "preferences");
+  return onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        if (typeof onData === "function") onData(snapshot.data());
+      } else {
+        if (typeof onData === "function") onData(null);
+      }
+    },
+    (err) => {
+      console.error("Firestore subscribeSettings Error:", err);
+      if (typeof onError === "function") onError(err);
+    }
+  );
+};
+
+export const saveSettings = async (settingsData = {}, explicitUid = null) => {
+  const uid = getActiveUid(explicitUid);
+  if (!uid) return { success: false, error: "Authentication required" };
+
+  try {
+    const docRef = doc(db, "users", uid, "settings", "preferences");
+    await setDoc(
+      docRef,
+      {
+        ...settingsData,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return { success: true };
+  } catch (err) {
+    console.error("Firestore saveSettings Error:", err);
+    return { success: false, error: err.message || String(err) };
+  }
+};
+
+// ==========================================
+// ONE-TIME LOCALSTORAGE MIGRATION & SEEDING
+// ==========================================
+
+export const migrateLocalStorageToFirestore = async (uid, defaultAccounts = []) => {
+  if (!uid) return;
+
+  try {
+    // 1. Accounts Migration & Seeding
+    const accountsCol = collection(db, "users", uid, "accounts");
+    const accountsSnap = await getDocs(accountsCol);
+
+    if (accountsSnap.empty) {
+      const localAccKey = `finsight_user_accounts_${uid}`;
+      const savedAccStr = localStorage.getItem(localAccKey);
+      let accToSeed = defaultAccounts;
+
+      if (savedAccStr) {
+        try {
+          const parsed = JSON.parse(savedAccStr);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            accToSeed = parsed;
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      if (Array.isArray(accToSeed) && accToSeed.length > 0) {
+        const batch = writeBatch(db);
+        accToSeed.forEach((acc, idx) => {
+          const accId = String(acc.id || `acc_${Date.now()}_${idx}`);
+          const ref = doc(db, "users", uid, "accounts", accId);
+          batch.set(ref, {
+            id: accId,
+            name: acc.name || `Account ${idx + 1}`,
+            type: acc.type || "Bank",
+            iconType: acc.iconType || "card",
+            initialBalance: Number(acc.initialBalance) || 0,
+            color: acc.color || "emerald",
+            createdAt: serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+      localStorage.removeItem(localAccKey);
+    }
+
+    // 2. Budgets Migration
+    const budgetsCol = collection(db, "users", uid, "budgets");
+    const budgetsSnap = await getDocs(budgetsCol);
+    if (budgetsSnap.empty) {
+      const localBudgetsKey = `finsight_budgets_${uid}`;
+      const savedBudgets = localStorage.getItem(localBudgetsKey);
+      if (savedBudgets) {
+        try {
+          const parsed = JSON.parse(savedBudgets);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const batch = writeBatch(db);
+            parsed.forEach((b) => {
+              const bId = String(b.id || (b.category ? b.category.toLowerCase().replace(/[^a-z0-9]/g, "_") : `budget_${Date.now()}`));
+              const ref = doc(db, "users", uid, "budgets", bId);
+              batch.set(ref, {
+                id: bId,
+                category: b.category,
+                limit: Number(b.limit) || 0,
+                createdAt: serverTimestamp(),
+              });
+            });
+            await batch.commit();
+          }
+        } catch {
+          // ignore
+        }
+        localStorage.removeItem(localBudgetsKey);
+      }
+    }
+
+    // 3. Goals Migration
+    const goalsCol = collection(db, "users", uid, "goals");
+    const goalsSnap = await getDocs(goalsCol);
+    if (goalsSnap.empty) {
+      const localGoalsKey = `finsight_goals_${uid}`;
+      const savedGoals = localStorage.getItem(localGoalsKey);
+      if (savedGoals) {
+        try {
+          const parsed = JSON.parse(savedGoals);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const batch = writeBatch(db);
+            parsed.forEach((g, idx) => {
+              const gId = String(g.id || `goal_${Date.now()}_${idx}`);
+              const ref = doc(db, "users", uid, "goals", gId);
+              batch.set(ref, {
+                id: gId,
+                name: g.name || "Goal",
+                targetAmount: Number(g.targetAmount ?? g.target) || 0,
+                currentAmount: Number(g.currentAmount ?? g.current) || 0,
+                deadline: g.deadline || "2026-12-31",
+                color: g.color || "#10b981",
+                createdAt: serverTimestamp(),
+              });
+            });
+            await batch.commit();
+          }
+        } catch {
+          // ignore
+        }
+        localStorage.removeItem(localGoalsKey);
+      }
+    }
+
+    // 4. Bills Migration
+    const billsCol = collection(db, "users", uid, "bills");
+    const billsSnap = await getDocs(billsCol);
+    if (billsSnap.empty) {
+      const localBillsKey = `finsight_bills_${uid}`;
+      const savedBills = localStorage.getItem(localBillsKey);
+      if (savedBills) {
+        try {
+          const parsed = JSON.parse(savedBills);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const batch = writeBatch(db);
+            parsed.forEach((b, idx) => {
+              const bId = String(b.id || `bill_${Date.now()}_${idx}`);
+              const ref = doc(db, "users", uid, "bills", bId);
+              batch.set(ref, {
+                id: bId,
+                name: b.name || "Bill",
+                amount: Number(b.amount) || 0,
+                dueDate: b.dueDate || "Due soon",
+                paid: Boolean(b.paid),
+                createdAt: serverTimestamp(),
+              });
+            });
+            await batch.commit();
+          }
+        } catch {
+          // ignore
+        }
+        localStorage.removeItem(localBillsKey);
+      }
+    }
+
+    // 5. Settings / Preferences Migration
+    const settingsDocRef = doc(db, "users", uid, "settings", "preferences");
+    const settingsSnap = await getDoc(settingsDocRef);
+    if (!settingsSnap.exists()) {
+      const localSettings = localStorage.getItem("finsightCommandSettings");
+      const onboardingDismissed = localStorage.getItem(`finsight_hide_onboarding_${uid}`) === "true";
+      let initialSettings = {};
+      if (localSettings) {
+        try {
+          initialSettings = JSON.parse(localSettings) || {};
+        } catch {
+          // ignore
+        }
+      }
+      if (onboardingDismissed) {
+        initialSettings.onboardingDismissed = true;
+      }
+      if (Object.keys(initialSettings).length > 0) {
+        await setDoc(settingsDocRef, { ...initialSettings, createdAt: serverTimestamp() }, { merge: true });
+      }
+      localStorage.removeItem("finsightCommandSettings");
+      localStorage.removeItem(`finsight_hide_onboarding_${uid}`);
+    }
+  } catch (err) {
+    console.error("Migration error:", err);
   }
 };

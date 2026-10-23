@@ -7,6 +7,7 @@ import Accounts from "../pages/Accounts";
 import AIAdvisor from "../pages/AIAdvisor";
 import Reports from "../pages/Reports";
 import Settings from "../pages/Settings";
+import ProtectedRoute from "./ProtectedRoute";
 
 function AppRoutes({
   totalBalance = 0,
@@ -15,6 +16,7 @@ function AppRoutes({
   csvData = [],
   loadingData = false,
   isLoggedIn = false,
+  authLoading = false,
   currentUser = null,
   setShowForm = () => {},
   uploadedFiles = [],
@@ -34,15 +36,16 @@ function AppRoutes({
         element={
           <Landing
             onGetStarted={() => {
-              navigate("/dashboard");
+              if (isLoggedIn) {
+                navigate("/dashboard");
+              } else {
+                setShowForm(true);
+              }
             }}
             onLogin={() => {
               setShowForm(true);
             }}
             setIsLoginOpen={setShowForm}
-            onDemo={() => {
-              navigate("/dashboard");
-            }}
             themeMode={themeMode}
             toggleThemeMode={toggleThemeMode}
           />
@@ -51,95 +54,134 @@ function AppRoutes({
       <Route
         path="/dashboard"
         element={
-          <Dashboard
-            totalBalance={totalBalance}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            csvData={csvData}
-            loadingData={loadingData}
+          <ProtectedRoute
             isLoggedIn={isLoggedIn}
-            currentUser={currentUser}
+            authLoading={authLoading}
             setShowForm={setShowForm}
-            uploadedFiles={uploadedFiles}
-            setUploadedFiles={setUploadedFiles}
-            onSaveTransaction={onSaveTransaction}
-            onDeleteTransaction={onDeleteTransaction}
-            showToast={showToast}
-            themeMode={themeMode}
-            toggleThemeMode={toggleThemeMode}
-          />
+          >
+            <Dashboard
+              totalBalance={totalBalance}
+              totalIncome={totalIncome}
+              totalExpense={totalExpense}
+              csvData={csvData}
+              loadingData={loadingData}
+              isLoggedIn={isLoggedIn}
+              currentUser={currentUser}
+              setShowForm={setShowForm}
+              uploadedFiles={uploadedFiles}
+              setUploadedFiles={setUploadedFiles}
+              onSaveTransaction={onSaveTransaction}
+              onDeleteTransaction={onDeleteTransaction}
+              showToast={showToast}
+              themeMode={themeMode}
+              toggleThemeMode={toggleThemeMode}
+            />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/transactions"
         element={
-          <Transactions
-            csvData={csvData}
-            uploadedFiles={uploadedFiles}
-            setUploadedFiles={setUploadedFiles}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            totalBalance={totalBalance}
-            onUpdateTransaction={onSaveTransaction}
-            onSaveTransaction={onSaveTransaction}
-            onDeleteTransaction={onDeleteTransaction}
-            showToast={showToast}
-          />
+          <ProtectedRoute
+            isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
+            setShowForm={setShowForm}
+          >
+            <Transactions
+              csvData={csvData}
+              uploadedFiles={uploadedFiles}
+              setUploadedFiles={setUploadedFiles}
+              totalIncome={totalIncome}
+              totalExpense={totalExpense}
+              totalBalance={totalBalance}
+              onUpdateTransaction={onSaveTransaction}
+              onSaveTransaction={onSaveTransaction}
+              onDeleteTransaction={onDeleteTransaction}
+              showToast={showToast}
+            />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/accounts"
         element={
-          <Accounts
-            csvData={csvData}
-            totalBalance={totalBalance}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            onSaveTransaction={onSaveTransaction}
-            onDeleteTransaction={onDeleteTransaction}
-            showToast={showToast}
-          />
+          <ProtectedRoute
+            isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
+            setShowForm={setShowForm}
+          >
+            <Accounts
+              csvData={csvData}
+              totalBalance={totalBalance}
+              totalIncome={totalIncome}
+              totalExpense={totalExpense}
+              onSaveTransaction={onSaveTransaction}
+              onDeleteTransaction={onDeleteTransaction}
+              showToast={showToast}
+            />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/ai-advisor"
         element={
-          <AIAdvisor
-            totalBalance={totalBalance}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            csvData={csvData}
-            onSaveTransaction={onSaveTransaction}
-            showToast={showToast}
-          />
+          <ProtectedRoute
+            isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
+            setShowForm={setShowForm}
+          >
+            <AIAdvisor
+              totalBalance={totalBalance}
+              totalIncome={totalIncome}
+              totalExpense={totalExpense}
+              csvData={csvData}
+              onSaveTransaction={onSaveTransaction}
+              showToast={showToast}
+            />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/reports"
         element={
-          <Reports
-            csvData={csvData}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            totalBalance={totalBalance}
-            onSaveTransaction={onSaveTransaction}
-            showToast={showToast}
-          />
+          <ProtectedRoute
+            isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
+            setShowForm={setShowForm}
+          >
+            <Reports
+              csvData={csvData}
+              totalIncome={totalIncome}
+              totalExpense={totalExpense}
+              totalBalance={totalBalance}
+              onSaveTransaction={onSaveTransaction}
+              showToast={showToast}
+            />
+          </ProtectedRoute>
         }
       />
       <Route
         path="/settings"
         element={
-          <Settings
-            currentUser={currentUser}
-            themeMode={themeMode}
-            toggleThemeMode={toggleThemeMode}
-            showToast={showToast}
-          />
+          <ProtectedRoute
+            isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
+            setShowForm={setShowForm}
+          >
+            <Settings
+              currentUser={currentUser}
+              themeMode={themeMode}
+              toggleThemeMode={toggleThemeMode}
+              showToast={showToast}
+            />
+          </ProtectedRoute>
         }
       />
       {/* Wildcard Fallback */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="*"
+        element={<Navigate to={isLoggedIn ? "/dashboard" : "/"} replace />}
+      />
     </Routes>
   );
 }

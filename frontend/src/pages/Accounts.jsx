@@ -20,6 +20,7 @@ import {
   FaSearch,
   FaCalendarAlt,
   FaReceipt,
+  FaSpinner,
 } from "react-icons/fa";
 
 import {
@@ -27,6 +28,11 @@ import {
   formatCurrency,
   getCurrencySymbol,
 } from "../config/constants.js";
+import {
+  subscribeAccounts,
+  saveAccount,
+  deleteAccount,
+} from "../services/firestore.js";
 
 const defaultAccounts = DEFAULT_ACCOUNTS;
 
@@ -40,36 +46,41 @@ export default function Accounts({
   showToast = () => {},
 }) {
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
-
-  const [accounts, setAccounts] = useState(() => {
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      try {
-        const saved = localStorage.getItem(`finsight_user_accounts_${uid}`);
-        if (saved) return JSON.parse(saved);
-      } catch (e) {
-        console.warn("Could not parse accounts from localStorage", e);
-      }
-    }
-    return defaultAccounts;
-  });
+  const [accounts, setAccounts] = useState([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      if (user?.uid) {
-        try {
-          const saved = localStorage.getItem(`finsight_user_accounts_${user.uid}`);
-          setAccounts(saved ? JSON.parse(saved) : defaultAccounts);
-        } catch {
-          setAccounts(defaultAccounts);
-        }
-      } else {
-        setAccounts(defaultAccounts);
-      }
     });
-    return unsub;
+    return unsubAuth;
   }, []);
+
+  // Real-time Firestore subscription for accounts
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setAccounts([]);
+      setIsLoadingAccounts(false);
+      return;
+    }
+
+    setIsLoadingAccounts(true);
+    const unsubAccounts = subscribeAccounts(
+      currentUser.uid,
+      (data) => {
+        setAccounts(data || []);
+        setIsLoadingAccounts(false);
+      },
+      (err) => {
+        console.error("Accounts subscription error:", err);
+        setIsLoadingAccounts(false);
+      }
+    );
+
+    return () => {
+      if (typeof unsubAccounts === "function") unsubAccounts();
+    };
+  }, [currentUser]);
 
   // Modals state
   const [addAccountModal, setAddAccountModal] = useState(false);
@@ -95,17 +106,6 @@ export default function Accounts({
 
   // Search filter inside transactions drawer
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Sync accounts to user-scoped localStorage
-  useEffect(() => {
-    if (currentUser?.uid) {
-      try {
-        localStorage.setItem(`finsight_user_accounts_${currentUser.uid}`, JSON.stringify(accounts));
-      } catch (err) {
-        console.warn("Failed to persist accounts:", err);
-      }
-    }
-  }, [accounts, currentUser]);
 
   // Compute live real-time balances for each account from transaction stream
   const accountBalances = useMemo(() => {
@@ -196,7 +196,7 @@ export default function Accounts({
   };
 
   // Save Add / Edit Account
-  const handleSaveAccount = (e) => {
+  const handleSaveAccount = async (e) => {
     e.preventDefault();
     if (!accName.trim()) {
       showToast("Account name cannot be blank.", "error");
@@ -204,38 +204,53 @@ export default function Accounts({
     }
 
     if (editingAccount) {
-      setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === editingAccount.id
-            ? {
-                ...a,
-                name: accName.trim(),
-                type: accType,
-                iconType: accIcon,
-                initialBalance: Number(accInitialBalance) || 0,
-              }
-            : a
-        )
+      const res = await saveAccount(
+        {
+          id: editingAccount.id,
+          firestoreId: editingAccount.id,
+          name: accName.trim(),
+          type: accType,
+          iconType: accIcon,
+          initialBalance: Number(accInitialBalance) || 0,
+          color: editingAccount.color || "emerald",
+        },
+        currentUser?.uid
       );
-      showToast(`Account "${accName}" updated.`, "success");
+
+      if (res.success) {
+        showToast(`Account "${accName}" updated.`, "success");
+      } else {
+        showToast(`Failed to update account: ${res.error}`, "error");
+      }
     } else {
-      const newAcc = {
-        id: `acc_${Date.now()}`,
-        name: accName.trim(),
-        type: accType,
-        iconType: accIcon,
-        initialBalance: Number(accInitialBalance) || 0,
-        color: accIcon === "cash" ? "emerald" : accIcon === "savings" ? "rose" : "sky",
-      };
-      setAccounts((prev) => [...prev, newAcc]);
-      showToast(`Account "${accName}" added.`, "success");
+      const res = await saveAccount(
+        {
+          name: accName.trim(),
+          type: accType,
+          iconType: accIcon,
+          initialBalance: Number(accInitialBalance) || 0,
+          color:
+            accIcon === "cash"
+              ? "emerald"
+              : accIcon === "savings"
+              ? "rose"
+              : "sky",
+        },
+        currentUser?.uid
+      );
+
+      if (res.success) {
+        showToast(`Account "${accName}" added.`, "success");
+      } else {
+        showToast(`Failed to add account: ${res.error}`, "error");
+      }
     }
 
     setAddAccountModal(false);
   };
 
   // Delete Account
-  const handleDeleteAccount = (id) => {
+  const handleDeleteAccount = async (id) => {
     const acc = accounts.find((a) => a.id === id);
     if (!acc) return;
     if (accounts.length <= 1) {
@@ -244,10 +259,14 @@ export default function Accounts({
     }
 
     if (window.confirm(`Are you sure you want to delete "${acc.name}"?`)) {
-      setAccounts((prev) => prev.filter((a) => a.id !== id));
-      setActiveMenuId(null);
-      if (selectedAccountForTx?.id === id) setSelectedAccountForTx(null);
-      showToast(`Account "${acc.name}" removed.`, "success");
+      const res = await deleteAccount(id, currentUser?.uid);
+      if (res.success) {
+        setActiveMenuId(null);
+        if (selectedAccountForTx?.id === id) setSelectedAccountForTx(null);
+        showToast(`Account "${acc.name}" removed.`, "success");
+      } else {
+        showToast(`Failed to delete account: ${res.error}`, "error");
+      }
     }
   };
 
@@ -442,9 +461,19 @@ export default function Accounts({
 
         {/* Account Cards Feed */}
         <div className="space-y-3">
-          {accounts.map((acc) => {
-            const balInfo = accountBalances[acc.id] || { currentBalance: 0, income: 0, expense: 0, txCount: 0 };
-            const isMenuOpen = activeMenuId === acc.id;
+          {isLoadingAccounts ? (
+            <div className="p-12 text-center text-zinc-500 text-xs flex items-center justify-center gap-2 bg-[#08080b] rounded-2xl border border-white/[0.04]">
+              <FaSpinner className="animate-spin text-emerald-400 text-sm" />
+              <span>Loading your accounts...</span>
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="p-12 text-center text-zinc-500 text-xs bg-[#08080b] rounded-2xl border border-white/[0.04]">
+              No accounts created yet. Click "Create New Account" below to initialize one.
+            </div>
+          ) : (
+            accounts.map((acc) => {
+              const balInfo = accountBalances[acc.id] || { currentBalance: 0, income: 0, expense: 0, txCount: 0 };
+              const isMenuOpen = activeMenuId === acc.id;
 
             return (
               <div
@@ -541,7 +570,8 @@ export default function Accounts({
                 </div>
               </div>
             );
-          })}
+          })
+        )}
         </div>
 
         {/* [+ ADD NEW ACCOUNT] Outline Action Button (Exact Reference Design) */}
