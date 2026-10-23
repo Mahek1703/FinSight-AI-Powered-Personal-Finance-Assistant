@@ -88,6 +88,7 @@ This document details all deletions, creations, modifications, architectural dec
 
 ### Backend Service (`backend/`)
 - `backend/src/server.js`:
+  - Added `import "dotenv/config"` as the primary import so environment variables are loaded prior to static submodule evaluations.
   - Added `helmet` for security headers.
   - Added `express-rate-limit` (general 300 req/15m; AI endpoints 60 req/15m per IP).
   - Configured bounded body limits (15mb) for base64 receipt uploads.
@@ -95,6 +96,7 @@ This document details all deletions, creations, modifications, architectural dec
   - Added `GET /health` endpoint returning `{ status: "ok", timestamp, uptime }`.
   - Removed hardcoded `http://localhost` from server start banner.
 - `backend/src/config/firebaseAdmin.js`:
+  - Added `import "dotenv/config"`.
   - Removed fallback string `"finsight-ai"`.
   - Initialized Admin SDK with `cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))`.
   - Exits with clear diagnostic guidance if credentials are missing in production.
