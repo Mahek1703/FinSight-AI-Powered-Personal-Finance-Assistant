@@ -12,12 +12,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Only register the Service Worker in production to prevent caching localhost in dev mode
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/service-worker.js')
-      .then((reg) => console.log('SW registered!', reg))
-      .catch((err) => console.error('SW registration failed!', err));
+// Clean up legacy service worker and obsolete v1 cache
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      if (registration.active?.scriptURL?.endsWith('/service-worker.js')) {
+        registration.unregister();
+      }
+    }
   });
+  if ('caches' in window) {
+    caches.delete('v1');
+  }
 }

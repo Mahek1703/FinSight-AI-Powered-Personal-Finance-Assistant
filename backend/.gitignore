@@ -1,2 +1,15 @@
+# Dependencies
 node_modules/
+
+# Logs
+logs/
+*.log
+
+# Environment & credentials
 .env
+.env.*
+!.env.example
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
+credentials.json
