@@ -56,30 +56,6 @@ const normalizeImportRow = (item) => {
 };
 
 function App() {
-  if (missingFirebaseEnvVars && missingFirebaseEnvVars.length > 0) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6 text-white font-sans">
-        <div className="max-w-md w-full rounded-2xl border border-red-500/40 bg-slate-900/95 p-8 shadow-2xl backdrop-blur-xl text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500 text-3xl">
-            <FaExclamationTriangle className="inline-block" />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Configuration Required</h1>
-          <p className="text-sm text-slate-400 mb-6">
-            FinSight AI cannot start because essential Firebase environment variables are missing.
-          </p>
-          <div className="rounded-xl bg-slate-950/80 p-4 border border-slate-800 text-left mb-6 font-mono text-xs text-red-400 space-y-1">
-            {missingFirebaseEnvVars.map((v) => (
-              <div key={v}>• {v}</div>
-            ))}
-          </div>
-          <p className="text-xs text-slate-500">
-            Please configure these variables in your deployment settings (e.g. Vercel dashboard) and redeploy.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const location = useLocation();
   const isLanding = location.pathname === "/";
 
@@ -424,6 +400,30 @@ function App() {
       return false;
     }
   };
+
+  if (missingFirebaseEnvVars && missingFirebaseEnvVars.length > 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6 text-white font-sans">
+        <div className="max-w-md w-full rounded-2xl border border-red-500/40 bg-slate-900/95 p-8 shadow-2xl backdrop-blur-xl text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500 text-3xl">
+            <FaExclamationTriangle className="inline-block" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Configuration Required</h1>
+          <p className="text-sm text-slate-400 mb-6">
+            FinSight AI cannot start because essential Firebase environment variables are missing.
+          </p>
+          <div className="rounded-xl bg-slate-950/80 p-4 border border-slate-800 text-left mb-6 font-mono text-xs text-red-400 space-y-1">
+            {missingFirebaseEnvVars.map((v) => (
+              <div key={v}>• {v}</div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            Please configure these variables in your deployment settings (e.g. Vercel dashboard) and redeploy.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
