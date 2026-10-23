@@ -2,14 +2,14 @@ import { getGmailMessages } from "../services/gmail.service.js";
 
 /**
  * Controller to connect Gmail via Google OAuth access token,
- * search and parse real purchase/receipt emails (Amazon, Flipkart, Swiggy, Uber, etc.),
+ * search and parse real purchase/receipt emails,
  * and return structured financial transaction objects to the client.
  */
 export const connectGmail = async (req, res) => {
   try {
     const { accessToken, userId } = req.body || {};
 
-    if (!accessToken) {
+    if (!accessToken || typeof accessToken !== "string" || !accessToken.trim()) {
       return res.status(400).json({
         success: false,
         count: 0,
@@ -18,11 +18,20 @@ export const connectGmail = async (req, res) => {
       });
     }
 
-    // 1. Fetch & parse all authentic purchase emails from Gmail API
-    const rawTransactions = await getGmailMessages(accessToken);
+    if (accessToken.length > 4096) {
+      return res.status(400).json({
+        success: false,
+        count: 0,
+        message: "Invalid access token length.",
+        transactions: [],
+      });
+    }
+
+    // Fetch & parse authentic purchase emails from Gmail API
+    const rawTransactions = await getGmailMessages(accessToken.trim());
     const transactions = (rawTransactions || []).map((t) => ({
       ...t,
-      userId: userId || null,
+      userId: userId || req.user?.uid || null,
     }));
     const count = transactions.length;
 
@@ -42,7 +51,7 @@ export const connectGmail = async (req, res) => {
       transactions,
     });
   } catch (error) {
-    console.error("Gmail Controller Error:", error.message || error);
+    console.error("Gmail Controller Error:", error.code || error.message || "Unknown error");
 
     const isAuthError =
       error.status === 401 ||
