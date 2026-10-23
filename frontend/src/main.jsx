@@ -16,7 +16,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
-      if (registration.active?.scriptURL?.endsWith('/service-worker.js')) {
+      const scriptURL =
+        registration.active?.scriptURL ||
+        registration.waiting?.scriptURL ||
+        registration.installing?.scriptURL ||
+        '';
+      if (scriptURL.endsWith('/service-worker.js')) {
         registration.unregister();
       }
     }
