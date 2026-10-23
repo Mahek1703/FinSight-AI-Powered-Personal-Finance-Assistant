@@ -3,6 +3,7 @@
  * Converts spoken English / Hindi / Hinglish transcripts into structured transaction records
  * using Google Gemini 1.5 Flash API with heuristic fallback.
  */
+import { apiFetch } from "./apiClient.js";
 
 const GEMINI_VOICE_PROMPT = `You are an expert multilingual AI Financial Logging Assistant.
 Extract structured financial transaction data from this spoken speech transcript in English, Hindi, or Hinglish:
@@ -385,63 +386,10 @@ export const parseVoiceWithGemini = async (transcript = "") => {
     throw new Error("Voice transcript is empty.");
   }
 
-  // Strategy A: Direct Gemini 1.5 Flash API Call (if API key available in client environment)
-  const directApiKey =
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    import.meta.env.VITE_FIREBASE_API_KEY ||
-    "";
-
-  if (directApiKey && !directApiKey.startsWith("YOUR_")) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(
-        directApiKey
-      )}`;
-
-      const payload = {
-        contents: [
-          {
-            parts: [
-              {
-                text: `${GEMINI_VOICE_PROMPT}\n\nUser Spoken Transcript: "${cleanTranscript}"\nCurrent Date Reference: ${new Date().toISOString().slice(0, 10)}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-        },
-      };
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const candidateText =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        if (candidateText) {
-          return sanitizeVoiceGeminiResponse(candidateText, cleanTranscript);
-        }
-      }
-    } catch (directErr) {
-      console.warn("Direct Gemini Voice API warning:", directErr.message || directErr);
-    }
-  }
-
-  // Strategy B: Backend Gemini Voice Proxy Call
+  // Primary: Backend Gemini Voice Proxy Call
   try {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    const backendResponse = await fetch(`${apiBaseUrl}/api/ai/parse-voice`, {
+    const backendResponse = await apiFetch("/api/ai/parse-voice", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         transcript: cleanTranscript,
       }),
@@ -470,7 +418,7 @@ export const parseVoiceWithGemini = async (transcript = "") => {
     console.warn("Backend Gemini Voice Proxy warning:", backendErr.message || backendErr);
   }
 
-  // Strategy C: Client-side Multilingual Heuristic Parsing Cascade
+  // Fallback: Client-side Multilingual Heuristic Parsing Cascade
   return parseHeuristicVoice(cleanTranscript);
 };
 

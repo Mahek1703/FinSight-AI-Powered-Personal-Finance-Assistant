@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { auth } from "../firebase";
+import { apiFetch } from "../services/apiClient";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -57,21 +58,14 @@ const GmailConnectionButton = ({ onTransactionsLoaded, onError, existingIds = []
               const accessToken = response.access_token;
               const currentUid = auth.currentUser?.uid || null;
 
-              const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-              const result = await fetch(
-                `${apiBaseUrl}/api/gmail/connect`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    accessToken,
-                    userId: currentUid,
-                    existingIds: existingIds || [],
-                  }),
-                }
-              );
+              const result = await apiFetch("/api/gmail/connect", {
+                method: "POST",
+                body: JSON.stringify({
+                  accessToken,
+                  userId: currentUid,
+                  existingIds: existingIds || [],
+                }),
+              });
 
               const data = await result.json();
 

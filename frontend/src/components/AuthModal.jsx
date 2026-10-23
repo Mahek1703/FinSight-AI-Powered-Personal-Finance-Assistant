@@ -21,6 +21,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { batchAddTransactions } from "../services/firestore";
+import { apiFetch } from "../services/apiClient";
 
 function AuthModal({
   showForm,
@@ -259,20 +260,13 @@ function AuthModal({
         }
 
         try {
-          const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-          const gmailResponse = await fetch(
-            `${apiBaseUrl}/api/gmail/connect`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                accessToken,
-                userId: result.user.uid,
-              }),
-            }
-          );
+          const gmailResponse = await apiFetch("/api/gmail/connect", {
+            method: "POST",
+            body: JSON.stringify({
+              accessToken,
+              userId: result.user.uid,
+            }),
+          });
 
           if (gmailResponse.ok) {
             const gmailData = await gmailResponse.json();

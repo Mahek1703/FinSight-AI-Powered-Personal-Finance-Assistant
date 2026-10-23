@@ -3,6 +3,7 @@
  * Converts receipt and invoice images into structured expense transactions
  * using Google Gemini 1.5 Flash Vision API.
  */
+import { apiFetch } from "./apiClient.js";
 
 const GEMINI_PROMPT = `You are a financial receipt and invoice OCR assistant. 
 Analyze the provided receipt or invoice image carefully.
@@ -195,76 +196,10 @@ export const scanReceiptWithGemini = async (imageFile) => {
   // 1. Extract base64
   const { base64Data, mimeType, fullDataUrl } = await fileToBase64(imageFile);
 
-  // Strategy A: Call Direct Gemini 1.5 Flash Vision API if API Key is configured in environment
-  const directApiKey =
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    import.meta.env.VITE_FIREBASE_API_KEY ||
-    "";
-
-  // Try direct Gemini 1.5 Flash API first
-  if (directApiKey && !directApiKey.startsWith("YOUR_")) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(
-        directApiKey
-      )}`;
-
-      const payload = {
-        contents: [
-          {
-            parts: [
-              {
-                text: GEMINI_PROMPT,
-              },
-              {
-                inline_data: {
-                  mime_type: mimeType || "image/jpeg",
-                  data: base64Data,
-                },
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-        },
-      };
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const candidateText =
-          data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        if (candidateText) {
-          const parsed = sanitizeAndParseGeminiResponse(candidateText);
-          return {
-            ...parsed,
-            previewUrl: fullDataUrl,
-            fileName: imageFile.name,
-            fileSize: imageFile.size,
-          };
-        }
-      }
-    } catch (directErr) {
-      console.warn("Direct Gemini Vision API attempt warning:", directErr.message || directErr);
-    }
-  }
-
-  // Strategy B: Call Backend Gemini Vision OCR Proxy
+  // Primary: Call Backend Gemini Vision OCR Proxy
   try {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    const backendResponse = await fetch(`${apiBaseUrl}/api/ai/scan-receipt`, {
+    const backendResponse = await apiFetch("/api/ai/scan-receipt", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         imageBase64: base64Data,
         mimeType: mimeType || "image/jpeg",
