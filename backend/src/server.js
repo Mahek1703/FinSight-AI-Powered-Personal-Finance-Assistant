@@ -1,13 +1,12 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { verifyFirebaseToken } from "./middleware/auth.middleware.js";
 import aiRoutes from "./routes/ai.routes.js";
 import gmailRoutes from "./routes/gmail.routes.js";
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
