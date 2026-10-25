@@ -46,15 +46,25 @@ function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {},
   }, [currentUser]);
 
   const update = async (key, value) => {
+    const prevVal = settings[key];
     setSettings((prev) => ({ ...prev, [key]: value }));
     if (currentUser?.uid) {
-      await saveSettings({ [key]: value }, currentUser.uid);
+      try {
+        await saveSettings({ [key]: value }, currentUser.uid);
+      } catch (err) {
+        setSettings((prev) => ({ ...prev, [key]: prevVal }));
+        showToast(`Failed to update ${key}: ${err.message || "Network error"}`, "error");
+        return false;
+      }
     }
+    return true;
   };
 
-  const toggle = (key) => {
-    update(key, !settings[key]);
-    showToast(`${key} updated!`, "success");
+  const toggle = async (key) => {
+    const success = await update(key, !settings[key]);
+    if (success) {
+      showToast(`${key} updated!`, "success");
+    }
   };
 
   const handleClearCache = () => {

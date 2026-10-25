@@ -89,6 +89,7 @@ function AppRoutes({
           >
             <Transactions
               csvData={csvData}
+              loadingData={loadingData}
               uploadedFiles={uploadedFiles}
               setUploadedFiles={setUploadedFiles}
               totalIncome={totalIncome}
@@ -112,6 +113,7 @@ function AppRoutes({
           >
             <Accounts
               csvData={csvData}
+              loadingData={loadingData}
               totalBalance={totalBalance}
               totalIncome={totalIncome}
               totalExpense={totalExpense}
@@ -135,6 +137,7 @@ function AppRoutes({
               totalIncome={totalIncome}
               totalExpense={totalExpense}
               csvData={csvData}
+              loadingData={loadingData}
               onSaveTransaction={onSaveTransaction}
               showToast={showToast}
             />
@@ -151,6 +154,7 @@ function AppRoutes({
           >
             <Reports
               csvData={csvData}
+              loadingData={loadingData}
               totalIncome={totalIncome}
               totalExpense={totalExpense}
               totalBalance={totalBalance}

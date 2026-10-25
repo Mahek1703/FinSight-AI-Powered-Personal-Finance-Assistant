@@ -189,7 +189,7 @@ export default function AddTransactionModal({
     } catch (err) {
       console.warn("Error submitting transaction:", err);
       setSaving(false);
-      handleClose();
+      setFormError(err.message || "Failed to save transaction. Please check your connection and try again.");
     }
   };
 

@@ -141,6 +141,7 @@ function DashboardContent({
   totalIncome = 0,
   totalExpense = 0,
   csvData = [],
+  loadingData = false,
   onGmailTransactionsLoaded,
   currentUser = null,
   uploadedFiles = [],
@@ -158,6 +159,8 @@ function DashboardContent({
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [addGoalModalOpen, setAddGoalModalOpen] = useState(false);
   const [addBudgetModalOpen, setAddBudgetModalOpen] = useState(false);
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
 
   // Editing state for modal
   const [editingTx, setEditingTx] = useState(null);
@@ -411,23 +414,34 @@ function DashboardContent({
     e.preventDefault();
     if (!newGoalName.trim() || !newGoalTarget) return;
 
-    const newG = {
-      name: newGoalName.trim(),
-      targetAmount: cleanAmount(newGoalTarget),
-      currentAmount: cleanAmount(newGoalCurrent) || 0,
-      deadline: newGoalDeadline || "2026-12-31",
-      color: "#10b981",
-    };
+    const targetAmt = cleanAmount(newGoalTarget);
+    if (targetAmt <= 0) {
+      showToast("Goal target amount must be greater than zero.", "error");
+      return;
+    }
 
-    const res = await saveGoal(newG, currentUser?.uid);
-    if (res.success) {
-      setNewGoalName("");
-      setNewGoalTarget("");
-      setNewGoalCurrent("0");
-      setAddGoalModalOpen(false);
-      showToast("Savings Goal bucket initialized!", "success");
-    } else {
-      showToast(`Failed to save goal: ${res.error}`, "error");
+    setIsSavingGoal(true);
+    try {
+      const newG = {
+        name: newGoalName.trim(),
+        targetAmount: targetAmt,
+        currentAmount: cleanAmount(newGoalCurrent) || 0,
+        deadline: newGoalDeadline || "2026-12-31",
+        color: "#10b981",
+      };
+
+      const res = await saveGoal(newG, currentUser?.uid);
+      if (res.success) {
+        setNewGoalName("");
+        setNewGoalTarget("");
+        setNewGoalCurrent("0");
+        setAddGoalModalOpen(false);
+        showToast("Savings Goal bucket initialized!", "success");
+      } else {
+        showToast(`Failed to save goal: ${res.error}`, "error");
+      }
+    } finally {
+      setIsSavingGoal(false);
     }
   };
 
@@ -436,22 +450,55 @@ function DashboardContent({
     if (!newBudgetLimit) return;
 
     const limitAmt = cleanAmount(newBudgetLimit);
-    const res = await saveBudget(
-      {
-        category: newBudgetCategory,
-        limit: limitAmt,
-      },
-      currentUser?.uid
-    );
+    if (limitAmt <= 0) {
+      showToast("Budget limit must be greater than zero.", "error");
+      return;
+    }
 
-    if (res.success) {
-      setNewBudgetLimit("");
-      setAddBudgetModalOpen(false);
-      showToast(`Monthly budget for ${newBudgetCategory} set to ${formatCurrency(limitAmt)}!`, "success");
-    } else {
-      showToast(`Failed to save budget: ${res.error}`, "error");
+    setIsSavingBudget(true);
+    try {
+      const res = await saveBudget(
+        {
+          category: newBudgetCategory,
+          limit: limitAmt,
+        },
+        currentUser?.uid
+      );
+
+      if (res.success) {
+        setNewBudgetLimit("");
+        setAddBudgetModalOpen(false);
+        showToast(`Monthly budget for ${newBudgetCategory} set to ${formatCurrency(limitAmt)}!`, "success");
+      } else {
+        showToast(`Failed to save budget: ${res.error}`, "error");
+      }
+    } finally {
+      setIsSavingBudget(false);
     }
   };
+
+  if (loadingData) {
+    return (
+      <div className="w-full space-y-6 pb-20 md:pb-8 animate-pulse">
+        <div className="h-64 rounded-3xl bg-zinc-900/60 border border-white/[0.04] p-8 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="h-4 w-32 bg-zinc-800 rounded-lg" />
+            <div className="h-10 w-64 bg-zinc-800 rounded-xl" />
+          </div>
+          <div className="flex gap-4">
+            <div className="h-12 w-36 bg-zinc-800 rounded-xl" />
+            <div className="h-12 w-36 bg-zinc-800 rounded-xl" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-32 rounded-2xl bg-zinc-900/40 border border-white/[0.04]" />
+          <div className="h-32 rounded-2xl bg-zinc-900/40 border border-white/[0.04]" />
+          <div className="h-32 rounded-2xl bg-zinc-900/40 border border-white/[0.04]" />
+        </div>
+        <div className="h-72 rounded-3xl bg-zinc-900/40 border border-white/[0.04]" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 pb-20 md:pb-8">
@@ -675,9 +722,11 @@ function DashboardContent({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
+                disabled={isSavingGoal}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaCheck className="text-emerald-400" /> Create Goal Bucket
+                <FaCheck className="text-emerald-400" />
+                <span>{isSavingGoal ? "Creating Goal..." : "Create Goal Bucket"}</span>
               </button>
             </form>
           </div>
@@ -742,9 +791,11 @@ function DashboardContent({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
+                disabled={isSavingBudget}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaCheck className="text-emerald-400" /> Save Budget Limit
+                <FaCheck className="text-emerald-400" />
+                <span>{isSavingBudget ? "Saving..." : "Save Budget Limit"}</span>
               </button>
             </form>
           </div>

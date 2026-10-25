@@ -31,6 +31,7 @@ function AIAdvisor({
   totalIncome = 0,
   totalExpense = 0,
   onSaveTransaction = async () => true,
+  loadingData = false,
 }) {
   const navigate = useNavigate();
 
@@ -173,6 +174,18 @@ Keep it encouraging, punchy, and easy to understand for beginners.
     setStrategyAmount("");
     setAddStrategyModal(false);
   };
+
+  if (loadingData) {
+    return (
+      <div className="w-full space-y-6 pb-20 md:pb-8 animate-pulse">
+        <div className="h-16 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-96 bg-zinc-900/60 rounded-3xl border border-white/[0.05]" />
+          <div className="h-96 bg-zinc-900/60 rounded-3xl border border-white/[0.05]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 pb-20 md:pb-8">

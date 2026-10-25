@@ -36,6 +36,7 @@ import {
 
 export default function Accounts({
   csvData = [],
+  loadingData = false,
   totalIncome = 0,
   totalExpense = 0,
   onSaveTransaction = async () => true,
@@ -44,6 +45,8 @@ export default function Accounts({
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   const [accounts, setAccounts] = useState([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  const [isExecutingTransfer, setIsExecutingTransfer] = useState(false);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
@@ -205,50 +208,55 @@ export default function Accounts({
       return;
     }
 
-    if (editingAccount) {
-      const res = await saveAccount(
-        {
-          id: editingAccount.id,
-          firestoreId: editingAccount.id,
-          name: accName.trim(),
-          type: accType,
-          iconType: accIcon,
-          initialBalance: Number(accInitialBalance) || 0,
-          color: editingAccount.color || "emerald",
-        },
-        currentUser?.uid
-      );
+    setIsSavingAccount(true);
+    try {
+      if (editingAccount) {
+        const res = await saveAccount(
+          {
+            id: editingAccount.id,
+            firestoreId: editingAccount.id,
+            name: accName.trim(),
+            type: accType,
+            iconType: accIcon,
+            initialBalance: Number(accInitialBalance) || 0,
+            color: editingAccount.color || "emerald",
+          },
+          currentUser?.uid
+        );
 
-      if (res.success) {
-        showToast(`Account "${accName}" updated.`, "success");
+        if (res.success) {
+          showToast(`Account "${accName}" updated.`, "success");
+          setAddAccountModal(false);
+        } else {
+          showToast(`Failed to update account: ${res.error}`, "error");
+        }
       } else {
-        showToast(`Failed to update account: ${res.error}`, "error");
-      }
-    } else {
-      const res = await saveAccount(
-        {
-          name: accName.trim(),
-          type: accType,
-          iconType: accIcon,
-          initialBalance: Number(accInitialBalance) || 0,
-          color:
-            accIcon === "cash"
-              ? "emerald"
-              : accIcon === "savings"
-              ? "rose"
-              : "sky",
-        },
-        currentUser?.uid
-      );
+        const res = await saveAccount(
+          {
+            name: accName.trim(),
+            type: accType,
+            iconType: accIcon,
+            initialBalance: Number(accInitialBalance) || 0,
+            color:
+              accIcon === "cash"
+                ? "emerald"
+                : accIcon === "savings"
+                ? "rose"
+                : "sky",
+          },
+          currentUser?.uid
+        );
 
-      if (res.success) {
-        showToast(`Account "${accName}" added.`, "success");
-      } else {
-        showToast(`Failed to add account: ${res.error}`, "error");
+        if (res.success) {
+          showToast(`Account "${accName}" added.`, "success");
+          setAddAccountModal(false);
+        } else {
+          showToast(`Failed to add account: ${res.error}`, "error");
+        }
       }
+    } finally {
+      setIsSavingAccount(false);
     }
-
-    setAddAccountModal(false);
   };
 
   // Delete Account
@@ -302,6 +310,7 @@ export default function Accounts({
       return;
     }
 
+    setIsExecutingTransfer(true);
     try {
       // 1. Deduct from source account
       await onSaveTransaction({
@@ -327,6 +336,8 @@ export default function Accounts({
       setTransferModal(false);
     } catch (err) {
       showToast("Transfer failed: " + err.message, "error");
+    } finally {
+      setIsExecutingTransfer(false);
     }
   };
 
@@ -463,7 +474,7 @@ export default function Accounts({
 
         {/* Account Cards Feed */}
         <div className="space-y-3">
-          {isLoadingAccounts ? (
+          {isLoadingAccounts || loadingData ? (
             <div className="p-12 text-center text-zinc-500 text-xs flex items-center justify-center gap-2 bg-[#08080b] rounded-2xl border border-white/[0.04]">
               <FaSpinner className="animate-spin text-emerald-400 text-sm" />
               <span>Loading your accounts...</span>
@@ -787,10 +798,17 @@ export default function Accounts({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
+                disabled={isSavingAccount}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaCheck className="text-emerald-400" />
-                <span>{editingAccount ? "Update Account" : "Create Account"}</span>
+                <span>
+                  {isSavingAccount
+                    ? "Saving..."
+                    : editingAccount
+                    ? "Update Account"
+                    : "Create Account"}
+                </span>
               </button>
             </form>
           </div>
@@ -904,10 +922,11 @@ export default function Accounts({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
+                disabled={isExecutingTransfer}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaCheck className="text-emerald-400" />
-                <span>Confirm Transfer</span>
+                <span>{isExecutingTransfer ? "Transferring..." : "Confirm Transfer"}</span>
               </button>
             </form>
           </div>

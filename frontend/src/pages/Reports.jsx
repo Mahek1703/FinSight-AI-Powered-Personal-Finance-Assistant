@@ -158,6 +158,7 @@ const parseTxDate = (dateVal) => {
 function Reports({
   totalBalance = 0,
   csvData = [],
+  loadingData = false,
 }) {
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth()); // 0 - 11
@@ -311,6 +312,12 @@ function Reports({
     return monthlySummary;
   }, [csvData, selectedYear]);
 
+  const hasYearlyData = useMemo(() => {
+    return yearlyTrendData.some(
+      (m) => Number(m.Income || 0) > 0 || Number(m.Expense || 0) > 0
+    );
+  }, [yearlyTrendData]);
+
   // Dynamic Calendar Heatmap Computation for (selectedYear, selectedMonth)
   const { heatmapDays, dailyMap } = useMemo(() => {
     const map = {};
@@ -409,6 +416,26 @@ function Reports({
     setEndDate(end.toISOString().slice(0, 10));
     setFilterMode("range");
   };
+
+  if (loadingData) {
+    return (
+      <div className="w-full space-y-6 pb-20 md:pb-8 animate-pulse">
+        <div className="h-20 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-96 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+          <div className="space-y-6">
+            <div className="h-44 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+            <div className="h-44 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 pb-20 md:pb-8">
@@ -822,58 +849,67 @@ function Reports({
             </div>
 
             {/* Recharts Pie Chart */}
-            <div className="h-52 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={78}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0d0d12",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "10px",
-                      color: "#fff",
-                      fontSize: "12px",
-                    }}
-                    formatter={(val) => [formatCurrency(val), "Amount"]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Category Chips List */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {categoryData.map((c) => (
-                <div
-                  key={c.name}
-                  className="p-2 rounded-xl bg-[#0c0c10] border border-white/[0.04] flex items-center gap-2"
-                >
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: c.color }}
-                  />
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-semibold text-white block truncate">
-                      {c.name}
-                    </span>
-                    <span className="text-[10px] text-zinc-400">
-                      {formatCurrency(c.value)}
-                    </span>
-                  </div>
+            {categoryData.length === 0 ? (
+              <div className="h-52 w-full flex flex-col items-center justify-center text-center p-4">
+                <FaChartPie className="text-3xl text-zinc-600 mb-2 opacity-50" />
+                <p className="text-xs text-zinc-400">No expense records found for this period</p>
+              </div>
+            ) : (
+              <>
+                <div className="h-52 w-full flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={78}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#0d0d12",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "10px",
+                          color: "#fff",
+                          fontSize: "12px",
+                        }}
+                        formatter={(val) => [formatCurrency(val), "Amount"]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
+
+                {/* Category Chips List */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {categoryData.map((c) => (
+                    <div
+                      key={c.name}
+                      className="p-2 rounded-xl bg-[#0c0c10] border border-white/[0.04] flex items-center gap-2"
+                    >
+                      <div
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: c.color }}
+                      />
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-semibold text-white block truncate">
+                          {c.name}
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {formatCurrency(c.value)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* 12-Month Inflow vs Outflow Bar Chart for Selected Year */}
@@ -893,25 +929,32 @@ function Reports({
             </div>
 
             <div className="h-52 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={yearlyTrendData}>
-                  <XAxis dataKey="month" stroke="#71717a" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `${getCurrencySymbol()}${v >= 1000 ? `${v / 1000}k` : v}`} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0d0d12",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "10px",
-                      color: "#fff",
-                      fontSize: "12px",
-                    }}
-                    formatter={(val) => [formatCurrency(val)]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "6px" }} />
-                  <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {!hasYearlyData ? (
+                <div className="h-full w-full flex flex-col items-center justify-center text-center p-4">
+                  <FaChartLine className="text-3xl text-zinc-600 mb-2 opacity-50" />
+                  <p className="text-xs text-zinc-400">No income or expense activity recorded for {selectedYear}</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={yearlyTrendData}>
+                    <XAxis dataKey="month" stroke="#71717a" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `${getCurrencySymbol()}${v >= 1000 ? `${v / 1000}k` : v}`} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0d0d12",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "10px",
+                        color: "#fff",
+                        fontSize: "12px",
+                      }}
+                      formatter={(val) => [formatCurrency(val)]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "6px" }} />
+                    <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>

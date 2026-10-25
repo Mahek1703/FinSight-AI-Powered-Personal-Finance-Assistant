@@ -119,6 +119,7 @@ const getCategoryIconSquircle = (category = "") => {
 
 function Transactions({
   csvData = [],
+  loadingData = false,
   uploadedFiles = [],
   totalIncome = 0,
   totalExpense = 0,
@@ -133,6 +134,7 @@ function Transactions({
   const [editingItem, setEditingItem] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showReceiptScanner, setShowReceiptScanner] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // New transaction modal state
   const [newType, setNewType] = useState("expense");
@@ -185,42 +187,59 @@ function Transactions({
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingItem) return;
-
-    if (!editingItem.amount || Number(editingItem.amount) <= 0) {
-      alert("Please enter a valid positive amount.");
+    const amt = Number(editingItem.amount);
+    if (!amt || amt <= 0) {
+      showToast("Please enter a valid positive amount.", "error");
       return;
     }
 
-    await onUpdateTransaction({
-      ...editingItem,
-      amount: Number(editingItem.amount),
-      category: editingItem.category,
-      type: editingItem.type === "income" ? "Income" : "Expense",
-    }, editingItem);
-
-    setEditingItem(null);
+    setIsSaving(true);
+    try {
+      const success = await onUpdateTransaction(
+        {
+          ...editingItem,
+          amount: amt,
+          category: editingItem.category,
+          type: editingItem.type === "income" ? "Income" : "Expense",
+        },
+        editingItem
+      );
+      if (success !== false) {
+        setEditingItem(null);
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCreateTransaction = async (e) => {
     e.preventDefault();
-    if (!newAmount || Number(newAmount) <= 0) {
-      alert("Please enter a valid positive amount.");
+    const amt = Number(newAmount);
+    if (!amt || amt <= 0) {
+      showToast("Please enter a valid positive amount.", "error");
       return;
     }
 
-    const payload = {
-      type: newType === "income" ? "Income" : "Expense",
-      amount: Number(newAmount),
-      category: newCategory,
-      date: newDate,
-      note: newNote,
-      accountType: newAccount,
-    };
+    setIsSaving(true);
+    try {
+      const payload = {
+        type: newType === "income" ? "Income" : "Expense",
+        amount: amt,
+        category: newCategory,
+        date: newDate,
+        note: newNote,
+        accountType: newAccount,
+      };
 
-    await onSaveTransaction(payload);
-    setShowAddModal(false);
-    setNewAmount("");
-    setNewNote("");
+      const success = await onSaveTransaction(payload);
+      if (success !== false) {
+        setShowAddModal(false);
+        setNewAmount("");
+        setNewNote("");
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -393,19 +412,58 @@ function Transactions({
           </span>
         </div>
 
-        {filteredData.length === 0 ? (
+        {loadingData ? (
+          <div className="space-y-3 py-4 animate-pulse">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-16 rounded-xl sm:rounded-2xl bg-[#0c0c10] border border-white/[0.04] p-3 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-zinc-800" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-32 bg-zinc-800 rounded" />
+                    <div className="h-2.5 w-20 bg-zinc-800 rounded" />
+                  </div>
+                </div>
+                <div className="h-4 w-16 bg-zinc-800 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : filteredData.length === 0 ? (
           <div className="text-center py-12 px-4 space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/[0.06] mx-auto flex items-center justify-center text-zinc-500 text-lg">
               <FaReceipt />
             </div>
-            <p className="text-xs text-zinc-400">No transactions match your search or filter.</p>
-            <button
-              type="button"
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold cursor-pointer transition-colors"
-            >
-              <FaPlus className="text-[10px]" /> Add Entry Now
-            </button>
+            {csvData.length === 0 ? (
+              <>
+                <p className="text-sm font-semibold text-white">No transactions yet</p>
+                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                  Add your first income or expense to start tracking your finances.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/40 text-xs font-bold cursor-pointer transition-colors active:scale-95"
+                >
+                  <FaPlus className="text-[10px]" /> Add your first transaction
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-zinc-400">No transactions match your search or filter.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilterType("all");
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
@@ -554,9 +612,11 @@ function Transactions({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/40 transition-all active:scale-95"
+                disabled={isSaving}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/40 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaCheck className="text-emerald-400" /> Update Transaction
+                <FaCheck className="text-emerald-400" />
+                <span>{isSaving ? "Updating..." : "Update Transaction"}</span>
               </button>
             </form>
           </div>
@@ -689,9 +749,11 @@ function Transactions({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/40 transition-all active:scale-95"
+                disabled={isSaving}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/40 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaCheck className="text-emerald-400" /> Save Transaction
+                <FaCheck className="text-emerald-400" />
+                <span>{isSaving ? "Saving..." : "Save Transaction"}</span>
               </button>
             </form>
           </div>
