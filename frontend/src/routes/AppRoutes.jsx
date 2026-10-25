@@ -173,6 +173,7 @@ function AppRoutes({
               themeMode={themeMode}
               toggleThemeMode={toggleThemeMode}
               showToast={showToast}
+              csvData={csvData}
             />
           </ProtectedRoute>
         }

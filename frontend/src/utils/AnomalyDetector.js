@@ -11,8 +11,6 @@ import {
   ANOMALY_DUPLICATE_WINDOW_HOURS,
 } from "../config/constants.js";
 
-const STORAGE_KEY_DISMISSED = "finsight_dismissed_anomalies";
-
 /**
  * Clean & Parse numeric amount
  */
@@ -42,41 +40,28 @@ const parseDate = (val) => {
   return isNaN(d.getTime()) ? new Date() : d;
 };
 
+const dismissedAnomaliesMemory = new Set();
+
 /**
- * Get dismissed anomaly IDs from localStorage
+ * Get dismissed anomaly IDs for the current session
  */
 export const getDismissedAnomalyIds = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY_DISMISSED);
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  } catch {
-    return new Set();
-  }
+  return new Set(dismissedAnomaliesMemory);
 };
 
 /**
- * Dismiss an anomaly by ID
+ * Dismiss an anomaly by ID for the current session
  */
 export const dismissAnomalyId = (anomalyId) => {
   if (!anomalyId) return;
-  try {
-    const set = getDismissedAnomalyIds();
-    set.add(anomalyId);
-    localStorage.setItem(STORAGE_KEY_DISMISSED, JSON.stringify(Array.from(set)));
-  } catch (err) {
-    console.warn("Failed to persist dismissed anomaly:", err);
-  }
+  dismissedAnomaliesMemory.add(anomalyId);
 };
 
 /**
  * Clear all dismissed anomaly IDs (for testing / reset)
  */
 export const clearDismissedAnomalies = () => {
-  try {
-    localStorage.removeItem(STORAGE_KEY_DISMISSED);
-  } catch {
-    // ignore
-  }
+  dismissedAnomaliesMemory.clear();
 };
 
 /**

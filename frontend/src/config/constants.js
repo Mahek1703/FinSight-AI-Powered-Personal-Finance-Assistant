@@ -82,9 +82,36 @@ export const SUPPORTED_CURRENCIES = [
   { code: "AED", symbol: "AED", label: "AED (UAE Dirham)", locale: "ar-AE" },
 ];
 
+let activeUserPreferences = {
+  currency: DEFAULT_CURRENCY,
+  locale: DEFAULT_LOCALE,
+};
+
+/**
+ * Updates the active user preference state for formatting.
+ * Typically synchronized from users/{uid}/settings/preferences in Firestore.
+ */
+export const setUserPreferences = (prefs = {}) => {
+  if (prefs?.currency) {
+    activeUserPreferences.currency = prefs.currency;
+    const found = SUPPORTED_CURRENCIES.find((c) => c.code === prefs.currency);
+    if (found?.locale) {
+      activeUserPreferences.locale = found.locale;
+    }
+  }
+  if (prefs?.locale) {
+    activeUserPreferences.locale = prefs.locale;
+  }
+};
+
+/**
+ * Returns current active user preferences.
+ */
+export const getUserPreferences = () => ({ ...activeUserPreferences });
+
 /**
  * Global dynamic currency formatting helper using standard Intl.NumberFormat.
- * Driven by user preferences or falls back safely to default locale/currency.
+ * Driven by user preferences from Firestore or falls back safely to default locale/currency.
  *
  * @param {number|string} amount
  * @param {Object} [options={}]
@@ -92,8 +119,9 @@ export const SUPPORTED_CURRENCIES = [
  */
 export const formatCurrency = (amount, options = {}) => {
   const num = typeof amount === "number" ? amount : Number(amount) || 0;
-  const currencyCode = options.currency || DEFAULT_CURRENCY;
-  const locale = options.locale || DEFAULT_LOCALE;
+  const prefs = getUserPreferences();
+  const currencyCode = options.currency || prefs.currency || DEFAULT_CURRENCY;
+  const locale = options.locale || prefs.locale || DEFAULT_LOCALE;
 
   try {
     return new Intl.NumberFormat(locale, {
@@ -103,16 +131,37 @@ export const formatCurrency = (amount, options = {}) => {
       minimumFractionDigits: options.minimumFractionDigits ?? 0,
     }).format(num);
   } catch {
-    return `${DEFAULT_CURRENCY_SYMBOL}${Number(num).toLocaleString(locale)}`;
+    const symbol = getCurrencySymbol(currencyCode);
+    return `${symbol}${Number(num).toLocaleString(locale)}`;
   }
 };
 
 /**
- * Returns currency symbol for a currency code
+ * Returns currency symbol for a currency code or currently active currency preference.
  */
-export const getCurrencySymbol = (currencyCode = DEFAULT_CURRENCY) => {
-  const found = SUPPORTED_CURRENCIES.find((c) => c.code === currencyCode);
+export const getCurrencySymbol = (currencyCode) => {
+  const code = currencyCode || getUserPreferences().currency || DEFAULT_CURRENCY;
+  const found = SUPPORTED_CURRENCIES.find((c) => c.code === code);
   return found ? found.symbol : DEFAULT_CURRENCY_SYMBOL;
+};
+
+/**
+ * Dynamic date formatting helper respecting user's active locale preference.
+ *
+ * @param {Date|string|number} date
+ * @param {Object} [options={}]
+ * @returns {string}
+ */
+export const formatDate = (date, options = {}) => {
+  if (!date) return "-";
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return String(date);
+  const locale = options.locale || getUserPreferences().locale || DEFAULT_LOCALE;
+  return d.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "short",
+    ...(options.formatOptions || {}),
+  });
 };
 
 // ==========================================

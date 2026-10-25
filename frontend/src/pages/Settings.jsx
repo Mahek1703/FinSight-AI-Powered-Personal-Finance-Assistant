@@ -32,7 +32,7 @@ const defaults = {
   aiInsights: true,
 };
 
-function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {}, showToast = () => {} }) {
+function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {}, showToast = () => {}, csvData = [] }) {
   const [settings, setSettings] = useState(defaults);
 
   useEffect(() => {
@@ -58,25 +58,19 @@ function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {},
   };
 
   const handleClearCache = () => {
-    if (window.confirm("Clear offline cached data? Your cloud records in Firestore remain safe.")) {
-      Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith("finsight_") || k.startsWith("finsightCommandSettings")) {
-          localStorage.removeItem(k);
-        }
-      });
+    if (window.confirm("Clear offline cached application state? Your cloud records in Firestore remain safe.")) {
+      try {
+        sessionStorage.clear();
+      } catch {
+        // ignore
+      }
       showToast("Offline cache cleared successfully.", "info");
       setTimeout(() => window.location.reload(), 800);
     }
   };
 
   const handleExportData = () => {
-    const userTxKey = currentUser?.uid
-      ? `finsight_local_transactions_${currentUser.uid}`
-      : "finsight_local_transactions";
-    const rawData =
-      localStorage.getItem(userTxKey) ||
-      localStorage.getItem("finsight_local_transactions") ||
-      "[]";
+    const rawData = JSON.stringify(csvData, null, 2);
     const blob = new Blob([rawData], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

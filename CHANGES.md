@@ -101,7 +101,7 @@ This document details all deletions, creations, modifications, architectural dec
   - Initialized Admin SDK with `cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))`.
   - Exits with clear diagnostic guidance if credentials are missing in production.
 - `backend/src/services/gemini.service.js`:
-  - Replaced hardcoded model fallbacks (`gemini-1.5-flash`, etc.) with `process.env.GEMINI_MODEL` (defaulting to current `gemini-2.5-flash`).
+  - Replaced hardcoded model fallbacks with `process.env.GEMINI_MODEL` (configured for current `gemini-2.0-flash`).
   - Added dynamic fallback chain driven by `GEMINI_FALLBACK_MODELS`.
 - `backend/src/controllers/ai.controller.js` & `gmail.controller.js`:
   - Protected all routes with `verifyFirebaseToken` middleware.

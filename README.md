@@ -46,7 +46,7 @@ Configure these in `backend/.env` for local development and in the **Render Dash
 | `PORT` | HTTP server listening port | `5000` |
 | `CLIENT_ORIGIN` | Allowed client origins (comma-separated, without trailing slashes) | `http://localhost:5173,https://your-app.vercel.app` |
 | `GEMINI_API_KEY` | Google Gemini API Key | `AIzaSy...` |
-| `GEMINI_MODEL` | Gemini AI model identifier | `gemini-2.5-flash` |
+| `GEMINI_MODEL` | Gemini AI model identifier | `gemini-2.0-flash` |
 | `FIREBASE_PROJECT_ID` | Firebase Project ID | `your-project-id` |
 | `FIREBASE_SERVICE_ACCOUNT` | Firebase Admin Service Account JSON string | `{"type":"service_account",...}` |
 

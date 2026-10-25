@@ -18,10 +18,11 @@ import {
   addImportedTransaction,
   deleteTransaction,
   subscribeFinanceData,
+  subscribeSettings,
   updateTransaction,
   migrateLocalStorageToFirestore,
 } from "./services/firestore";
-import { formatCurrency, DEFAULT_ACCOUNTS } from "./config/constants";
+import { formatCurrency, DEFAULT_ACCOUNTS, setUserPreferences, DEFAULT_CURRENCY, DEFAULT_LOCALE } from "./config/constants";
 import {
   FaCheckCircle,
   FaExclamationCircle,
@@ -163,13 +164,18 @@ function App() {
   // Strict user-scoped authentication & real-time Firestore sync
   useEffect(() => {
     let currentFirestoreUnsub = null;
+    let currentSettingsUnsub = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setAuthLoading(false);
-      // 1. Immediately unsubscribe from previous user's Firestore listener
+      // 1. Immediately unsubscribe from previous user's Firestore listeners
       if (typeof currentFirestoreUnsub === "function") {
         currentFirestoreUnsub();
         currentFirestoreUnsub = null;
+      }
+      if (typeof currentSettingsUnsub === "function") {
+        currentSettingsUnsub();
+        currentSettingsUnsub = null;
       }
 
       if (user) {
@@ -180,7 +186,14 @@ function App() {
         // One-time localStorage migration to Firestore & default account seeding
         migrateLocalStorageToFirestore(user.uid, DEFAULT_ACCOUNTS);
 
-        // 2. Subscribe strictly to authenticated user's transactions (users/{user.uid}/transactions)
+        // Subscribe to user preferences (currency, locale) in real-time
+        currentSettingsUnsub = subscribeSettings(user.uid, (pref) => {
+          if (pref) {
+            setUserPreferences(pref);
+          }
+        });
+
+        // 2. Subscribe strictly to authenticated user's transactions
         currentFirestoreUnsub = subscribeFinanceData(
           user.uid,
           ({ transactions: liveTransactions }) => {
@@ -200,6 +213,7 @@ function App() {
         setTransactions([]);
         setUploadedFiles([]);
         setLoadingData(false);
+        setUserPreferences({ currency: DEFAULT_CURRENCY, locale: DEFAULT_LOCALE });
 
         // 4. Purge local and session storage caches to eliminate cross-account residual leakage
         try {
@@ -219,6 +233,9 @@ function App() {
     return () => {
       if (typeof currentFirestoreUnsub === "function") {
         currentFirestoreUnsub();
+      }
+      if (typeof currentSettingsUnsub === "function") {
+        currentSettingsUnsub();
       }
       unsubscribeAuth();
     };
