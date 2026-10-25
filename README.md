@@ -14,7 +14,7 @@ FinSight AI is a modern, high-performance Personal Finance Progressive Web App (
 - **AI Processing**: Google Gemini API called **exclusively through the backend**.
   - All Gemini API keys remain secure on the server side and are never exposed in browser bundles.
   - Backend endpoints are protected by Firebase ID token authentication (`Authorization: Bearer <token>`).
-- **Clean Architecture Notice**: There is **NO PostgreSQL, NO Prisma, NO Next.js, and NO SQL** in this repository.
+- **Clean Architecture Notice**: There is **NO legacy relational ORM, NO SQL database, and NO Next.js** in this repository.
 
 ---
 

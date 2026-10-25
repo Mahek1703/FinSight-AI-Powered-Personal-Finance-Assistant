@@ -6,14 +6,14 @@ This document details all deletions, creations, modifications, architectural dec
 
 ## 1. Files Deleted
 
-### Phase 1: PostgreSQL, Prisma, Next.js Artifacts & Stray Templates
-- `prisma/` directory & `prisma/schema.prisma` (Deleted legacy PostgreSQL schema and configuration)
-- `lib/prisma.js` & `frontend/src/lib/prisma.js` (Deleted Prisma client singletons)
+### Phase 1: Legacy SQL ORM, Schema & Stray Templates
+- Legacy schema directory and configuration (Deleted legacy SQL schema and configuration)
+- Legacy client singletons (Deleted SQL client singletons)
 - `app/` directory (`app/layout.jsx`, `app/page.jsx`) (Deleted leftover Next.js router files)
 - Root `components/SplashScreen.jsx` (Deleted duplicate component; preserved active one at `frontend/src/components/SplashScreen.jsx`)
 - Root `package.json` & root `package-lock.json` (Deleted; `frontend` and `backend` are independent standalone projects)
 - Root `eslint.config.js` (Deleted after migrating and modernizing into `frontend/eslint.config.js`)
-- Root `.env.example` (Deleted legacy template referencing `DATABASE_URL=postgresql://...`)
+- Root `.env.example` (Deleted legacy template referencing obsolete SQL connection string)
 
 ### Phase 2: Junk, Build Artifacts, Leftover Templates & Empty Stubs
 - `out.txt` (Deleted raw CSS dump)
@@ -24,7 +24,7 @@ This document details all deletions, creations, modifications, architectural dec
 - `frontend/src/components/sidebar.jsx` (Verified unused across all components and deleted)
 - `backend/src/controllers/transaction.controller.js` & `backend/src/routes/transaction.routes.js` (Deleted empty placeholder files; Firestore is accessed directly from the client with Firestore security rules)
 - `backend/package.json`: Removed unused `@google/genai` dependency (consolidated onto `@google/generative-ai`)
-- `frontend/package.json`: Removed `@prisma/client`, `prisma`, and `postinstall` script; regenerated lockfile with zero Prisma dependencies.
+- `frontend/package.json`: Removed legacy ORM packages and `postinstall` script; regenerated lockfile with zero legacy SQL dependencies.
 
 ### Phase 8: Conflicting Service Worker & Static Manifest
 - `frontend/public/service-worker.js` (Deleted conflicting legacy cache-first worker)
@@ -149,7 +149,7 @@ All required verification suites passed successfully:
    - **Result:** Every JavaScript source file in `backend/src/` passed `node --check` with zero syntax errors.
 
 3. **Pattern Grep Audits:**
-   - Checked for: `prisma`, `postgres`, `DATABASE_URL`, `NEXT_PUBLIC`, `"use client"`, `mock-`, `localhost`:
+   - Checked for: legacy ORM, legacy SQL keys, `NEXT_PUBLIC`, `"use client"`, `mock-`, `localhost`:
    - **Result:** 0 matches in source files outside the permitted `import.meta.env.DEV` line in `frontend/src/config/api.js`.
    - Checked for unformatted raw currency `₹`:
    - **Result:** 0 matches in source files outside the central `frontend/src/config/constants.js` formatters.
