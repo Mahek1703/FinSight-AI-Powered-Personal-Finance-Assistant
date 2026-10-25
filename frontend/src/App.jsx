@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import "./index.css";
-import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import AppRoutes from "./routes/AppRoutes";
 import Navbar from "./components/Navbar";
 import SplashScreen from "./components/SplashScreen";
@@ -327,6 +325,8 @@ function App() {
       const extension = file.name.split(".").pop().toLowerCase();
 
       if (extension === "csv") {
+        const PapaModule = await import("papaparse");
+        const Papa = PapaModule.default || PapaModule;
         Papa.parse(file, {
           header: true,
           skipEmptyLines: true,
@@ -337,6 +337,7 @@ function App() {
       }
 
       if (extension === "xlsx" || extension === "xls") {
+        const XLSX = await import("xlsx");
         const reader = new FileReader();
         reader.onload = async (e) => {
           const workbook = XLSX.read(e.target.result, { type: "binary" });

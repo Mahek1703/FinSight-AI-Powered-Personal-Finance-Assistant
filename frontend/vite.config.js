@@ -16,7 +16,7 @@ export default defineConfig({
         clientsClaim: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       devOptions: {
         enabled: false,
@@ -53,4 +53,45 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalized = id.replace(/\\/g, "/");
+          if (!normalized.includes("/node_modules/")) return;
+
+          if (
+            /\/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(normalized)
+          ) {
+            return "vendor-react";
+          }
+          if (
+            /\/node_modules\/(@firebase\/auth|firebase\/auth)\//.test(normalized)
+          ) {
+            return "vendor-firebase-auth";
+          }
+          if (
+            /\/node_modules\/(@firebase\/firestore|firebase\/firestore)\//.test(normalized)
+          ) {
+            return "vendor-firebase-firestore";
+          }
+          if (
+            /\/node_modules\/(@firebase|firebase)\//.test(normalized)
+          ) {
+            return "vendor-firebase-core";
+          }
+          if (
+            /\/node_modules\/(recharts|d3-[^/]+|victory-vendor)\//.test(normalized)
+          ) {
+            return "vendor-charts";
+          }
+          if (
+            /\/node_modules\/react-icons\//.test(normalized)
+          ) {
+            return "vendor-icons";
+          }
+        },
+      },
+    },
+  },
 });

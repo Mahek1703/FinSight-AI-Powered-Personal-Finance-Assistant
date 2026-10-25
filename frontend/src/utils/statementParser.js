@@ -1,22 +1,7 @@
-import Papa from "papaparse";
-import * as XLSX from "xlsx";
-import * as pdfjsLib from "pdfjs-dist";
 import { collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebase";
 
 import { MAX_FILE_SIZE_BYTES } from "../config/constants.js";
-
-// Configure PDF.js Worker locally for modern Vite / Browser environments
-try {
-  if (typeof window !== "undefined" && pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/build/pdf.worker.min.mjs",
-      import.meta.url
-    ).href;
-  }
-} catch (workerErr) {
-  console.warn("Could not set local pdfjs worker URL:", workerErr);
-}
 
 export { MAX_FILE_SIZE_BYTES };
 
@@ -501,6 +486,8 @@ export const transformRawRowToTransaction = (row) => {
  * Iterates over EVERY valid non-empty line using a loop without stopping after the first row.
  */
 export const parseCSV = async (file) => {
+  const PapaModule = await import("papaparse");
+  const Papa = PapaModule.default || PapaModule;
   const content = await file.text();
   const rawLines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
@@ -542,6 +529,7 @@ export const parseCSV = async (file) => {
  * Iterates through every row in the spreadsheet.
  */
 export const parseExcel = async (file) => {
+  const XLSX = await import("xlsx");
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array" });
 
@@ -569,6 +557,18 @@ export const parseExcel = async (file) => {
  * Extracts line-by-line raw text strings from PDF statements and iterates over every line.
  */
 export const parsePDF = async (file) => {
+  const pdfjsLib = await import("pdfjs-dist");
+  try {
+    if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions?.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.min.mjs",
+        import.meta.url
+      ).href;
+    }
+  } catch (workerErr) {
+    console.warn("Could not set local pdfjs worker URL:", workerErr);
+  }
+
   const buffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(buffer),

@@ -1,13 +1,24 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import Landing from "../pages/Landing";
-import Dashboard from "../pages/Dashboard";
-import Transactions from "../pages/Transactions";
-import Accounts from "../pages/Accounts";
-import AIAdvisor from "../pages/AIAdvisor";
-import Reports from "../pages/Reports";
-import Settings from "../pages/Settings";
 import ProtectedRoute from "./ProtectedRoute";
+import { FaSpinner } from "react-icons/fa";
+
+const Landing = lazy(() => import("../pages/Landing"));
+const Dashboard = lazy(() => import("../pages/Dashboard"));
+const Transactions = lazy(() => import("../pages/Transactions"));
+const Accounts = lazy(() => import("../pages/Accounts"));
+const AIAdvisor = lazy(() => import("../pages/AIAdvisor"));
+const Reports = lazy(() => import("../pages/Reports"));
+const Settings = lazy(() => import("../pages/Settings"));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-3 text-center">
+      <FaSpinner className="animate-spin text-2xl text-emerald-400" />
+      <p className="text-xs text-zinc-400 font-medium">Loading view...</p>
+    </div>
+  );
+}
 
 function AppRoutes({
   totalBalance = 0,
@@ -30,7 +41,8 @@ function AppRoutes({
   const navigate = useNavigate();
 
   return (
-    <Routes>
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <Routes>
       <Route
         path="/"
         element={
@@ -187,7 +199,8 @@ function AppRoutes({
         path="*"
         element={<Navigate to={isLoggedIn ? "/dashboard" : "/"} replace />}
       />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

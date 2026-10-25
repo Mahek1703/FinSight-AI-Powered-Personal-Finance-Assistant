@@ -26,13 +26,15 @@ import {
 import {
   DEFAULT_ACCOUNTS,
   formatCurrency,
-  getCurrencySymbol,
 } from "../config/constants.js";
 import {
   subscribeAccounts,
   saveAccount,
   deleteAccount,
 } from "../services/firestore.js";
+import AddAccountModal from "../components/accounts/AddAccountModal";
+import TransferFundsModal from "../components/accounts/TransferFundsModal";
+import AccountTransactionsDrawer from "../components/accounts/AccountTransactionsDrawer";
 
 export default function Accounts({
   csvData = [],
@@ -600,338 +602,52 @@ export default function Accounts({
         </button>
       </div>
 
-      {/* ==========================================================================
-          Account Transaction Ledger Drawer / Feed
-          ========================================================================== */}
-      {selectedAccountForTx && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setSelectedAccountForTx(null)}
-        >
-          <div
-            className="bg-[#0c0c10] border border-white/[0.08] rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-3">
-                {renderAccountIcon(selectedAccountForTx)}
-                <div>
-                  <h3 className="text-base font-extrabold text-white capitalize">
-                    {selectedAccountForTx.name} Transactions
-                  </h3>
-                  <p className="text-xs text-emerald-400 font-bold">
-                    Current Balance:{" "}
-                    {formatCurrency(
-                      accountBalances[selectedAccountForTx.id]?.currentBalance || 0
-                    )}
-                  </p>
-                </div>
-              </div>
+      {/* Account Transactions Ledger Drawer */}
+      <AccountTransactionsDrawer
+        selectedAccount={selectedAccountForTx}
+        onClose={() => setSelectedAccountForTx(null)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        accountTransactions={accountTransactions}
+        accountBalance={accountBalances[selectedAccountForTx?.id]?.currentBalance || 0}
+        renderIcon={renderAccountIcon}
+      />
 
-              <button
-                type="button"
-                onClick={() => setSelectedAccountForTx(null)}
-                className="p-2 text-zinc-400 hover:text-white bg-transparent border-none cursor-pointer"
-              >
-                <FaTimes />
-              </button>
-            </div>
+      {/* Add / Edit Account Modal */}
+      <AddAccountModal
+        isOpen={addAccountModal}
+        onClose={() => setAddAccountModal(false)}
+        editingAccount={editingAccount}
+        accName={accName}
+        setAccName={setAccName}
+        accType={accType}
+        setAccType={setAccType}
+        accIcon={accIcon}
+        setAccIcon={setAccIcon}
+        accInitialBalance={accInitialBalance}
+        setAccInitialBalance={setAccInitialBalance}
+        onSave={handleSaveAccount}
+        isSavingAccount={isSavingAccount}
+      />
 
-            {/* Search Box */}
-            <div className="relative">
-              <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs" />
-              <input
-                type="text"
-                placeholder="Search category, note or amount in this account..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-              />
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {accountTransactions.length === 0 ? (
-                <div className="text-center py-10 text-zinc-500 text-xs">
-                  No transactions recorded for this account yet.
-                </div>
-              ) : (
-                accountTransactions.map((tx, idx) => {
-                  const rawType = String(tx.Type || tx.type || "").toLowerCase();
-                  const isIncome = rawType === "income";
-                  const amt = Math.abs(
-                    Number(String(tx.Amount || tx.amount || 0).replace(/[+,]/g, "")) || 0
-                  );
-
-                  return (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-xl bg-[#14141a] border border-white/[0.04] flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${
-                            isIncome
-                              ? "bg-emerald-500/10 text-emerald-400"
-                              : "bg-rose-500/10 text-rose-400"
-                          }`}
-                        >
-                          {isIncome ? <FaArrowUp /> : <FaArrowDown />}
-                        </div>
-                        <div>
-                          <strong className="text-white block font-semibold">
-                            {tx.Category || tx.category || "General"}
-                          </strong>
-                          <span className="text-[10px] text-zinc-400">
-                            {tx.Date || tx.date || "Recent"} {tx.Note || tx.note ? `· ${tx.Note || tx.note}` : ""}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`font-extrabold text-sm ${
-                          isIncome ? "text-emerald-400" : "text-zinc-200"
-                        }`}
-                      >
-                        {isIncome ? "+" : "-"} {formatCurrency(amt)}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==========================================================================
-          Add / Edit Account Modal
-          ========================================================================== */}
-      {addAccountModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setAddAccountModal(false)}
-        >
-          <div
-            className="bg-[#0c0c10] border border-white/[0.08] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FaWallet className="text-emerald-400" />
-                <span>{editingAccount ? "Edit Account" : "Add New Account / Wallet"}</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setAddAccountModal(false)}
-                className="p-1 text-zinc-500 hover:text-zinc-300 bg-transparent border-none cursor-pointer"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveAccount} className="space-y-3.5">
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Account Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. HDFC Salary, PayTM Wallet, Emergency Fund"
-                  value={accName}
-                  onChange={(e) => setAccName(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Account Category
-                  </label>
-                  <select
-                    value={accType}
-                    onChange={(e) => setAccType(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank Account</option>
-                    <option value="Card">Credit/Debit Card</option>
-                    <option value="Online">Online / UPI</option>
-                    <option value="Savings">Savings Vault</option>
-                    <option value="Investment">Investment</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Visual Icon
-                  </label>
-                  <select
-                    value={accIcon}
-                    onChange={(e) => setAccIcon(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    <option value="cash">💵 Cash Note</option>
-                    <option value="savings">🐷 Piggy Bank</option>
-                    <option value="card">💳 Credit/Debit Card</option>
-                    <option value="bank">🏦 Bank Institution</option>
-                    <option value="wallet">👛 Digital Wallet</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Initial Starting Balance ({getCurrencySymbol()})
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={accInitialBalance}
-                  onChange={(e) => setAccInitialBalance(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSavingAccount}
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaCheck className="text-emerald-400" />
-                <span>
-                  {isSavingAccount
-                    ? "Saving..."
-                    : editingAccount
-                    ? "Update Account"
-                    : "Create Account"}
-                </span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==========================================================================
-          Inter-Account Transfer Funds Modal
-          ========================================================================== */}
-      {transferModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setTransferModal(false)}
-        >
-          <div
-            className="bg-[#0c0c10] border border-white/[0.08] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FaExchangeAlt className="text-sky-400" />
-                <span>Transfer Money Between Accounts</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setTransferModal(false)}
-                className="p-1 text-zinc-500 hover:text-zinc-300 bg-transparent border-none cursor-pointer"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <form onSubmit={handleExecuteTransfer} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    From Account
-                  </label>
-                  <select
-                    value={transferFrom}
-                    onChange={(e) => setTransferFrom(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.name}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    To Account
-                  </label>
-                  <select
-                    value={transferTo}
-                    onChange={(e) => setTransferTo(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.name}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Transfer Amount ({getCurrencySymbol()})
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  step="any"
-                  placeholder="e.g. 5000"
-                  value={transferAmount}
-                  onChange={(e) => setTransferAmount(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Transfer Date
-                </label>
-                <input
-                  type="date"
-                  value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Reason / Description
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. ATM withdrawal, Card settlement"
-                  value={transferNote}
-                  onChange={(e) => setTransferNote(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isExecutingTransfer}
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaCheck className="text-emerald-400" />
-                <span>{isExecutingTransfer ? "Transferring..." : "Confirm Transfer"}</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Inter-Account Transfer Funds Modal */}
+      <TransferFundsModal
+        isOpen={transferModal}
+        onClose={() => setTransferModal(false)}
+        accounts={accounts}
+        transferFrom={transferFrom}
+        setTransferFrom={setTransferFrom}
+        transferTo={transferTo}
+        setTransferTo={setTransferTo}
+        transferAmount={transferAmount}
+        setTransferAmount={setTransferAmount}
+        transferDate={transferDate}
+        setTransferDate={setTransferDate}
+        transferNote={transferNote}
+        setTransferNote={setTransferNote}
+        onExecute={handleExecuteTransfer}
+        isExecutingTransfer={isExecutingTransfer}
+      />
     </div>
   );
 }
