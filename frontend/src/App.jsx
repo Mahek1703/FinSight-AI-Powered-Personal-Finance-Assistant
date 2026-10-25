@@ -9,7 +9,8 @@ import AddTransactionModal from "./components/AddTransactionModal";
 import MobileBottomNav from "./components/navigation/MobileBottomNav";
 import VoiceAssistantModal from "./components/voice/VoiceAssistantModal";
 import FloatingVoiceButton from "./components/voice/FloatingVoiceButton";
-import { auth, missingFirebaseEnvVars } from "./firebase";
+import { auth } from "./firebase";
+import { validateEnv } from "./config/env";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   addTransaction,
@@ -55,6 +56,32 @@ const normalizeImportRow = (item) => {
 };
 
 function App() {
+  const envValidation = useMemo(() => validateEnv(), []);
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
+  const [pwaReloadHandler, setPwaReloadHandler] = useState(null);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    const handlePwaRefresh = (e) => {
+      if (e.detail?.reload) {
+        setPwaReloadHandler(() => e.detail.reload);
+      }
+    };
+    window.addEventListener("finsight:pwa-refresh", handlePwaRefresh);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("finsight:pwa-refresh", handlePwaRefresh);
+    };
+  }, []);
+
   const location = useLocation();
   const isLanding = location.pathname === "/";
 
@@ -443,7 +470,7 @@ function App() {
     }
   };
 
-  if (missingFirebaseEnvVars && missingFirebaseEnvVars.length > 0) {
+  if (!envValidation.isValid && !import.meta.env.DEV) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6 text-white font-sans">
         <div className="max-w-md w-full rounded-2xl border border-red-500/40 bg-slate-900/95 p-8 shadow-2xl backdrop-blur-xl text-center">
@@ -452,10 +479,10 @@ function App() {
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Configuration Required</h1>
           <p className="text-sm text-slate-400 mb-6">
-            FinSight AI cannot start because essential Firebase environment variables are missing.
+            FinSight AI cannot start because essential environment variables are missing from this deployment.
           </p>
           <div className="rounded-xl bg-slate-950/80 p-4 border border-slate-800 text-left mb-6 font-mono text-xs text-red-400 space-y-1">
-            {missingFirebaseEnvVars.map((v) => (
+            {envValidation.missing.map((v) => (
               <div key={v}>• {v}</div>
             ))}
           </div>
@@ -475,6 +502,31 @@ function App() {
           : "bg-[#000000] text-white"
       }`}
     >
+      {/* PWA Update Ready Toast / Banner */}
+      {pwaReloadHandler && (
+        <div className="bg-blue-600/90 text-white px-4 py-2 text-xs flex items-center justify-between gap-3 sticky top-0 z-50 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-2">
+            <FaInfoCircle className="text-sm shrink-0" />
+            <span>A new version of FinSight AI is available.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => pwaReloadHandler()}
+            className="px-3 py-1 bg-white text-blue-700 font-bold rounded-lg text-xs hover:bg-blue-50 transition cursor-pointer"
+          >
+            Reload Now
+          </button>
+        </div>
+      )}
+
+      {/* Offline Status Banner */}
+      {!isOnline && (
+        <div className="bg-zinc-800/90 border-b border-zinc-700 text-zinc-300 px-4 py-1.5 text-xs flex items-center justify-center gap-2 sticky top-0 z-40 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span>Offline mode — viewing cached records. Writes will sync when reconnected.</span>
+        </div>
+      )}
+
       {/* Cold boot / Slow API Notification Banner */}
       {apiSlowNotice && (
         <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-200 px-4 py-2 text-xs flex items-center justify-center gap-2 sticky top-0 z-50 backdrop-blur-md animate-pulse">

@@ -7,17 +7,9 @@ import {
   getFirestore,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { REQUIRED_ENV_VARS } from "./config/env";
 
-const requiredKeys = [
-  "VITE_FIREBASE_API_KEY",
-  "VITE_FIREBASE_AUTH_DOMAIN",
-  "VITE_FIREBASE_PROJECT_ID",
-  "VITE_FIREBASE_STORAGE_BUCKET",
-  "VITE_FIREBASE_MESSAGING_SENDER_ID",
-  "VITE_FIREBASE_APP_ID",
-];
-
-export const missingFirebaseEnvVars = requiredKeys.filter(
+export const missingFirebaseEnvVars = REQUIRED_ENV_VARS.filter(
   (key) => !import.meta.env[key]
 );
 
