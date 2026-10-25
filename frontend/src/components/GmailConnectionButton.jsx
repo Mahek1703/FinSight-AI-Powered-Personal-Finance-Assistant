@@ -75,8 +75,6 @@ const GmailConnectionButton = ({ onTransactionsLoaded, onError, existingIds = []
                 );
               }
 
-              console.log("FinSight AI: Gmail transactions received from backend:", data.transactions);
-
               setConnected(true);
 
               if (onTransactionsLoaded) {

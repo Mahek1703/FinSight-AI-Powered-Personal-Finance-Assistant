@@ -20,7 +20,6 @@ import {
   signInWithPopup,
   updateProfile,
 } from "firebase/auth";
-import { batchAddTransactions } from "../services/firestore";
 import { apiFetch } from "../services/apiClient";
 
 function AuthModal({
@@ -60,7 +59,7 @@ function AuthModal({
     setError("");
   };
 
-  const finishAuth = async (user = null) => {
+  const finishAuth = async (_user = null) => {
     if (typeof setIsLoggedIn === "function") {
       setIsLoggedIn(true);
     }
@@ -269,8 +268,7 @@ function AuthModal({
           });
 
           if (gmailResponse.ok) {
-            const gmailData = await gmailResponse.json();
-            console.log("Gmail connected successfully:", gmailData);
+            await gmailResponse.json();
           }
         } catch (backendErr) {
           console.warn(

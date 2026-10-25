@@ -78,7 +78,6 @@ const CustomForecastTooltip = ({ active, payload, label }) => {
  */
 export default function CashFlowForecastCard({
   transactions = [],
-  totalBalance = 0,
 }) {
   const [viewMode, setViewMode] = useState("monthly"); // 'monthly' | 'runway'
 
@@ -102,7 +101,6 @@ export default function CashFlowForecastCard({
     isCashCrunch,
     warningDay,
     alertMessage,
-    alertType,
     chartData,
     runwayPoints,
     daySpan = 0,

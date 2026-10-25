@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   FaBell,
   FaChevronRight,
@@ -34,7 +33,6 @@ const defaults = {
 };
 
 function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {}, showToast = () => {} }) {
-  const navigate = useNavigate();
   const [settings, setSettings] = useState(defaults);
 
   useEffect(() => {

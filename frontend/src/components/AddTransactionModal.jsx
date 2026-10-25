@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   FaArrowDown,
   FaArrowUp,
@@ -93,23 +93,18 @@ export default function AddTransactionModal({
   };
 
 
-  const availableAccounts = React.useMemo(() => {
-    try {
-      const saved = localStorage.getItem("finsight_user_accounts");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const names = parsed.map((a) => a.name || a.type).filter(Boolean);
-          return Array.from(new Set([...names, "Cash", "Savings", "online", "Bank", "Card"]));
-        }
-      }
-    } catch (e) {
-      // fallback
-    }
-    return accountTypes;
-  }, [show]);
+  const availableAccounts = accountTypes;
 
-  useEffect(() => {
+  const [prevTx, setPrevTx] = useState(editingTransaction);
+  const [prevPreset, setPrevPreset] = useState(initialPreset);
+  const [prevShow, setPrevShow] = useState(show);
+
+  if (prevTx !== editingTransaction || prevPreset !== initialPreset || prevShow !== show) {
+    setPrevTx(editingTransaction);
+    setPrevPreset(initialPreset);
+    setPrevShow(show);
+    setFormError("");
+
     if (editingTransaction) {
       const rawType = String(
         editingTransaction.Type || editingTransaction.type || "Expense"
@@ -145,8 +140,7 @@ export default function AddTransactionModal({
     } else {
       setForm(defaultFormState);
     }
-    setFormError("");
-  }, [editingTransaction, initialPreset, show]);
+  }
 
   if (!show) return null;
 

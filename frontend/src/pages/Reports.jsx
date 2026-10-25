@@ -156,16 +156,11 @@ const parseTxDate = (dateVal) => {
 };
 
 function Reports({
-  totalIncome = 0,
-  totalExpense = 0,
   totalBalance = 0,
   csvData = [],
-  onSaveTransaction = async () => true,
-  showToast = () => {},
 }) {
-  const now = new Date();
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0 - 11
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth()); // 0 - 11
   const [filterMode, setFilterMode] = useState("month"); // 'month' | 'range' | 'year'
 
   // Custom date range inputs
@@ -187,7 +182,8 @@ function Reports({
 
   // Extract all available years from transactions + current year
   const availableYears = useMemo(() => {
-    const yearsSet = new Set([now.getFullYear(), 2024, 2025, 2026, 2027]);
+    const currentYear = new Date().getFullYear();
+    const yearsSet = new Set([currentYear, 2024, 2025, 2026, 2027]);
     csvData.forEach((tx) => {
       const d = parseTxDate(tx.Date || tx.date || tx.createdAt);
       if (d) yearsSet.add(d.getFullYear());
@@ -219,9 +215,10 @@ function Reports({
 
   // Jump to Current Month
   const handleJumpToCurrent = () => {
-    setSelectedYear(now.getFullYear());
-    setSelectedMonth(now.getMonth());
-    setSelectedDay(now.getDate());
+    const d = new Date();
+    setSelectedYear(d.getFullYear());
+    setSelectedMonth(d.getMonth());
+    setSelectedDay(d.getDate());
   };
 
   // Filtered transactions based on active filterMode

@@ -30,9 +30,7 @@ function AIAdvisor({
   totalBalance = 0,
   totalIncome = 0,
   totalExpense = 0,
-  csvData = [],
   onSaveTransaction = async () => true,
-  showToast = () => {},
 }) {
   const navigate = useNavigate();
 

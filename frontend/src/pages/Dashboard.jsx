@@ -1,5 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, Component } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState, useEffect, Component } from "react";
 import {
   FaArrowDown,
   FaArrowRight,
@@ -51,29 +50,14 @@ import {
 } from "react-icons/fa";
 import { EXPENSE_CATEGORIES, formatCurrency, getCurrencySymbol } from "../config/constants.js";
 
-import { onAuthStateChanged } from "firebase/auth";
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  doc,
-  deleteDoc,
-  updateDoc,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 import {
   subscribeBudgets,
   saveBudget,
-  deleteBudget,
   subscribeGoals,
   saveGoal,
-  deleteGoal,
   subscribeBills,
   saveBill,
-  deleteBill,
   batchAddTransactions,
 } from "../services/firestore.js";
 
@@ -91,9 +75,6 @@ import CashFlowForecastCard from "../components/dashboard/CashFlowForecastCard";
 import AnomalyAlertBanner from "../components/dashboard/AnomalyAlertBanner";
 import VoiceAssistantModal from "../components/voice/VoiceAssistantModal";
 
-
-
-
 import {
   parseStatementFile,
   validateStatementFile,
@@ -103,7 +84,6 @@ import {
   parseEmailBatch,
 } from "../utils/emailParser";
 
-const todayValue = () => new Date().toISOString().slice(0, 10);
 const cleanAmount = (value) =>
   Number(String(value || 0).replace(/[,+]/g, "")) || 0;
 
@@ -162,18 +142,13 @@ function DashboardContent({
   totalExpense = 0,
   csvData = [],
   onGmailTransactionsLoaded,
-  loadingData = false,
-  isLoggedIn = false,
   currentUser = null,
-  setShowForm = () => {},
   uploadedFiles = [],
   setUploadedFiles = () => {},
   onSaveTransaction = async () => true,
   onDeleteTransaction = async () => true,
   showToast = () => {},
 }) {
-  const navigate = useNavigate();
-
   // Active Segmented View Tab: 'overview' | 'budgets' | 'goals_bills' | 'sync'
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -183,8 +158,6 @@ function DashboardContent({
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [addGoalModalOpen, setAddGoalModalOpen] = useState(false);
   const [addBudgetModalOpen, setAddBudgetModalOpen] = useState(false);
-  const [addBillModalOpen, setAddBillModalOpen] = useState(false);
-
 
   // Editing state for modal
   const [editingTx, setEditingTx] = useState(null);
@@ -197,15 +170,20 @@ function DashboardContent({
   const [goals, setGoals] = useState([]);
   const [categoryBudgets, setCategoryBudgets] = useState([]);
 
-  // Subscribe in real-time to user's planning items on Firestore
-  useEffect(() => {
+  const [prevUid, setPrevUid] = useState(currentUser?.uid);
+  if (prevUid !== currentUser?.uid) {
+    setPrevUid(currentUser?.uid);
     setGmailTransactions([]);
     if (!currentUser?.uid) {
       setBills([]);
       setGoals([]);
       setCategoryBudgets([]);
-      return;
     }
+  }
+
+  // Subscribe in real-time to user's planning items on Firestore
+  useEffect(() => {
+    if (!currentUser?.uid) return;
 
     const unsubBills = subscribeBills(currentUser.uid, (data) => setBills(data || []));
     const unsubGoals = subscribeGoals(currentUser.uid, (data) => setGoals(data || []));
@@ -216,7 +194,7 @@ function DashboardContent({
       if (typeof unsubGoals === "function") unsubGoals();
       if (typeof unsubBudgets === "function") unsubBudgets();
     };
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   // Modal form temporary fields
   const [newGoalName, setNewGoalName] = useState("");
@@ -226,14 +204,6 @@ function DashboardContent({
 
   const [newBudgetCategory, setNewBudgetCategory] = useState("Food");
   const [newBudgetLimit, setNewBudgetLimit] = useState("");
-
-  const [newBillName, setNewBillName] = useState("");
-  const [newBillAmount, setNewBillAmount] = useState("");
-  const [newBillDueDate, setNewBillDueDate] = useState("In 7 days");
-
-  // Voice recognition states
-  const [isListening, setIsListening] = useState(false);
-  const [transcriptText, setTranscriptText] = useState("");
 
   // Combined master transactions list strictly derived from csvData (user-scoped from App)
   const masterTransactions = useMemo(() => {
@@ -295,21 +265,7 @@ function DashboardContent({
 
   const handleDelete = async (tx) => {
     if (!tx) return;
-    try {
-      const uid = currentUser?.uid || auth.currentUser?.uid;
-      const targetId = tx.firestoreId || tx.id;
-
-      if (uid && targetId) {
-        const docRef = doc(db, "users", uid, "transactions", targetId);
-        await deleteDoc(docRef);
-        showToast("Transaction removed.", "info");
-        return;
-      }
-      await onDeleteTransaction(tx);
-    } catch (err) {
-      console.warn("Delete fallback:", err);
-      await onDeleteTransaction(tx);
-    }
+    await onDeleteTransaction(tx);
   };
 
   // Gmail purchase sync handler

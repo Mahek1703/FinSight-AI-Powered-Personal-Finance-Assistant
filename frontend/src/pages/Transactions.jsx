@@ -122,7 +122,6 @@ function Transactions({
   uploadedFiles = [],
   totalIncome = 0,
   totalExpense = 0,
-  totalBalance = 0,
   onUpdateTransaction = async () => true,
   onSaveTransaction = async () => true,
   onDeleteTransaction = async () => true,

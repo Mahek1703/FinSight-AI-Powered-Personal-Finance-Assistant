@@ -34,15 +34,11 @@ import {
   deleteAccount,
 } from "../services/firestore.js";
 
-const defaultAccounts = DEFAULT_ACCOUNTS;
-
 export default function Accounts({
   csvData = [],
-  totalBalance = 0,
   totalIncome = 0,
   totalExpense = 0,
   onSaveTransaction = async () => true,
-  onDeleteTransaction = async () => true,
   showToast = () => {},
 }) {
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
@@ -56,15 +52,21 @@ export default function Accounts({
     return unsubAuth;
   }, []);
 
-  // Real-time Firestore subscription for accounts
-  useEffect(() => {
+  const [prevUid, setPrevUid] = useState(currentUser?.uid);
+  if (prevUid !== currentUser?.uid) {
+    setPrevUid(currentUser?.uid);
     if (!currentUser?.uid) {
       setAccounts([]);
       setIsLoadingAccounts(false);
-      return;
+    } else {
+      setIsLoadingAccounts(true);
     }
+  }
 
-    setIsLoadingAccounts(true);
+  // Real-time Firestore subscription for accounts
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
     const unsubAccounts = subscribeAccounts(
       currentUser.uid,
       (data) => {
@@ -80,7 +82,7 @@ export default function Accounts({
     return () => {
       if (typeof unsubAccounts === "function") unsubAccounts();
     };
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   // Modals state
   const [addAccountModal, setAddAccountModal] = useState(false);

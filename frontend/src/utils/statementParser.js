@@ -82,7 +82,7 @@ export const cleanAmount = (raw) => {
   }
 
   // Remove currency symbols, commas, +, -, Dr, Cr, whitespace
-  const cleaned = str.replace(/[\u20B9$€£¥INR|Rs\.?|,|\s|\+|Dr|Cr|dr|cr|-]/gi, "");
+  const cleaned = str.replace(/[\u20B9$€£¥INR|Rs.?|,|\s|+|Dr|Cr|dr|cr|-]/gi, "");
   const num = parseFloat(cleaned);
   return Number.isNaN(num) ? 0 : Math.abs(num);
 };
@@ -152,7 +152,7 @@ export const cleanNarration = (raw) => {
   str = str.replace(/\b(?:dr|cr|bal|avl\s*bal|closing\s*bal|to|from)[:\s0-9.,]*/gi, " ");
 
   // Strip symbols & delimiters
-  str = str.replace(/[_\/\-*:]+/g, " ");
+  str = str.replace(/[_/\-*:]+/g, " ");
 
   // Collapse whitespace
   str = str.replace(/\s+/g, " ").trim();

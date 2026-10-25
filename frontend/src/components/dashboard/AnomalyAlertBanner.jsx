@@ -36,11 +36,12 @@ export default function AnomalyAlertBanner({
 
   // Run dynamic anomaly detection
   const detectionResult = useMemo(() => {
+    // dismissedVersion forces re-evaluation when an anomaly is dismissed
+    void dismissedVersion;
     return detectAnomalies(transactions);
   }, [transactions, dismissedVersion]);
 
   const {
-    status,
     badgeText,
     badgeColor,
     activeAnomaliesCount,

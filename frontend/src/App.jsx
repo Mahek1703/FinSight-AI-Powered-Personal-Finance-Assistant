@@ -60,32 +60,34 @@ function App() {
   const isLanding = location.pathname === "/";
 
   const [showForm, setShowForm] = useState(false);
-  const [isApp, setIsApp] = useState(false);
-  const [showSplash, setShowSplash] = useState(false);
+  const [isApp] = useState(() => {
+    return Boolean(
+      (typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
+        (typeof window !== "undefined" && window.navigator?.standalone)
+    );
+  });
+  const [showSplash, setShowSplash] = useState(() => {
+    return Boolean(
+      (typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
+        (typeof window !== "undefined" && window.navigator?.standalone)
+    );
+  });
   const [globalAddModalOpen, setGlobalAddModalOpen] = useState(false);
 
   // Splash Screen Logic: ONLY display when opened as an installed PWA or native web app container.
   // Standard web browser sessions bypass the splash screen completely.
   useEffect(() => {
-    const isStandalone =
-      (typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(display-mode: standalone)").matches) ||
-      (typeof window !== "undefined" && Boolean(window.navigator?.standalone));
-
-    if (isStandalone) {
-      setIsApp(true);
-      setShowSplash(true);
-      const splashTimer = setTimeout(() => {
-        setShowSplash(false);
-      }, 2000);
-
-      return () => clearTimeout(splashTimer);
-    } else {
-      setIsApp(false);
+    if (!showSplash) return;
+    const splashTimer = setTimeout(() => {
       setShowSplash(false);
-    }
-  }, []);
+    }, 2000);
+
+    return () => clearTimeout(splashTimer);
+  }, [showSplash]);
   const [globalVoiceModalOpen, setGlobalVoiceModalOpen] = useState(false);
   const [manualVoicePreset, setManualVoicePreset] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
