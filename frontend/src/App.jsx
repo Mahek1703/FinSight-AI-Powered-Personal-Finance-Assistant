@@ -15,7 +15,6 @@ import { auth, missingFirebaseEnvVars } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   addTransaction,
-  addImportedTransaction,
   deleteTransaction,
   subscribeFinanceData,
   subscribeSettings,
@@ -311,7 +310,7 @@ function App() {
     }
 
     try {
-      await Promise.all(normalizedRows.map((row) => addImportedTransaction(row, uid)));
+      await Promise.all(normalizedRows.map((row) => addTransaction(row, uid)));
       showToast(`${normalizedRows.length} records saved to Firestore!`, "success");
     } catch (err) {
       console.error("Firestore import error:", err);

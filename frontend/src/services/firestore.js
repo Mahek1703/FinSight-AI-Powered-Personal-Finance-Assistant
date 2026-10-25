@@ -16,6 +16,33 @@ import { db, auth } from "../firebase.js";
 const toNumber = (value) => Number(String(value || 0).replace(/[,+]/g, "")) || 0;
 
 /**
+ * Maps Firestore errors and offline conditions to user-friendly messages.
+ */
+export const formatFirestoreError = (error) => {
+  if (!error) return "An unknown database error occurred.";
+  const code = error.code || "";
+  const msg = error.message || String(error);
+
+  if (
+    code === "permission-denied" ||
+    msg.includes("permission-denied") ||
+    msg.includes("Missing or insufficient permissions")
+  ) {
+    return "Permission denied. You can only view and modify your own financial data.";
+  }
+  if (code === "unavailable" || msg.includes("unavailable")) {
+    return "Database service is currently unavailable. Operating in offline mode.";
+  }
+  if (code === "failed-precondition" || msg.includes("failed-precondition")) {
+    return "Operation failed a database precondition or missing index.";
+  }
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return "You are offline. Your changes will sync automatically when your connection is restored.";
+  }
+  return msg || "Database operation failed. Please retry.";
+};
+
+/**
  * Dynamically resolves the current authenticated user's UID.
  * Falls back to explicitly passed UID if provided.
  */
@@ -134,7 +161,7 @@ export const addExpense = async (expenseData = {}, explicitUid = null) => {
     };
   } catch (error) {
     console.error("Firestore addExpense Error:", error);
-    return { success: false, error: error.message || String(error) };
+    return { success: false, error: formatFirestoreError(error) };
   }
 };
 
@@ -265,7 +292,7 @@ export const updateExpense = async (expenseOrId, dataOrUid = null, explicitUid =
     return { success: true };
   } catch (error) {
     console.error("Firestore updateExpense Error:", error);
-    return { success: false, error: error.message || String(error) };
+    return { success: false, error: formatFirestoreError(error) };
   }
 };
 
@@ -301,7 +328,7 @@ export const deleteExpense = async (expenseOrId, explicitUid = null) => {
     return { success: true };
   } catch (error) {
     console.error("Firestore deleteExpense Error:", error);
-    return { success: false, error: error.message || String(error) };
+    return { success: false, error: formatFirestoreError(error) };
   }
 };
 
@@ -351,7 +378,7 @@ export const addIncome = async (incomeData = {}, explicitUid = null) => {
     };
   } catch (error) {
     console.error("Firestore addIncome Error:", error);
-    return { success: false, error: error.message || String(error) };
+    return { success: false, error: formatFirestoreError(error) };
   }
 };
 
@@ -380,8 +407,6 @@ export const getIncome = async (explicitUid = null) => {
     return [];
   }
 };
-
-export const getIncomes = getIncome;
 
 /**
  * Real-time listener for user income under users/{uid}/income
@@ -434,8 +459,6 @@ export const subscribeToIncome = (param1, param2, param3) => {
   }
 };
 
-export const subscribeToIncomes = subscribeToIncome;
-
 /**
  * Update an income document in users/{uid}/income/{targetId}
  */
@@ -486,7 +509,7 @@ export const updateIncome = async (incomeOrId, dataOrUid = null, explicitUid = n
     return { success: true };
   } catch (error) {
     console.error("Firestore updateIncome Error:", error);
-    return { success: false, error: error.message || String(error) };
+    return { success: false, error: formatFirestoreError(error) };
   }
 };
 
@@ -522,7 +545,7 @@ export const deleteIncome = async (incomeOrId, explicitUid = null) => {
     return { success: true };
   } catch (error) {
     console.error("Firestore deleteIncome Error:", error);
-    return { success: false, error: error.message || String(error) };
+    return { success: false, error: formatFirestoreError(error) };
   }
 };
 
@@ -540,10 +563,6 @@ export const addTransaction = async (transaction = {}, explicitUid = null) => {
     return addIncome(transaction, explicitUid);
   }
   return addExpense(transaction, explicitUid);
-};
-
-export const addImportedTransaction = async (transaction = {}, explicitUid = null) => {
-  return addTransaction(transaction, explicitUid);
 };
 
 /**
@@ -797,7 +816,7 @@ export const saveAccount = async (accountData = {}, explicitUid = null) => {
     }
   } catch (err) {
     console.error("Firestore saveAccount Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -811,7 +830,7 @@ export const deleteAccount = async (accountId, explicitUid = null) => {
     return { success: true };
   } catch (err) {
     console.error("Firestore deleteAccount Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -874,7 +893,7 @@ export const saveBudget = async (budgetData = {}, explicitUid = null) => {
     }
   } catch (err) {
     console.error("Firestore saveBudget Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -888,7 +907,7 @@ export const deleteBudget = async (budgetId, explicitUid = null) => {
     return { success: true };
   } catch (err) {
     console.error("Firestore deleteBudget Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -948,7 +967,7 @@ export const saveGoal = async (goalData = {}, explicitUid = null) => {
     }
   } catch (err) {
     console.error("Firestore saveGoal Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -962,7 +981,7 @@ export const deleteGoal = async (goalId, explicitUid = null) => {
     return { success: true };
   } catch (err) {
     console.error("Firestore deleteGoal Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -1021,7 +1040,7 @@ export const saveBill = async (billData = {}, explicitUid = null) => {
     }
   } catch (err) {
     console.error("Firestore saveBill Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -1035,7 +1054,7 @@ export const deleteBill = async (billId, explicitUid = null) => {
     return { success: true };
   } catch (err) {
     console.error("Firestore deleteBill Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 
@@ -1085,7 +1104,7 @@ export const saveSettings = async (settingsData = {}, explicitUid = null) => {
     return { success: true };
   } catch (err) {
     console.error("Firestore saveSettings Error:", err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: formatFirestoreError(err) };
   }
 };
 

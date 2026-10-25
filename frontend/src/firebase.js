@@ -1,6 +1,11 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  getFirestore,
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const requiredKeys = [
@@ -39,7 +44,20 @@ if (missingFirebaseEnvVars.length === 0) {
 }
 
 export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
+
+let firestoreInstance = null;
+if (app) {
+  try {
+    firestoreInstance = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch {
+    firestoreInstance = getFirestore(app);
+  }
+}
+export const db = firestoreInstance;
 export const storage = app ? getStorage(app) : null;
 
 export default app;
