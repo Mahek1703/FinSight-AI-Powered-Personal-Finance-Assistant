@@ -1,7 +1,7 @@
 /**
  * FinSight AI - Multilingual Voice Natural Language Parsing Engine
  * Converts spoken English / Hindi / Hinglish transcripts into structured transaction records
- * using Google Gemini 1.5 Flash API with heuristic fallback.
+ * using Google Gemini AI with heuristic fallback.
  */
 import { apiFetch } from "./apiClient.js";
 import {

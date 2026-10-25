@@ -22,6 +22,7 @@ import {
   updateTransaction,
   migrateLocalStorageToFirestore,
 } from "./services/firestore";
+import { subscribeApiSlowStatus } from "./services/apiClient";
 import { formatCurrency, DEFAULT_ACCOUNTS, setUserPreferences, DEFAULT_CURRENCY, DEFAULT_LOCALE } from "./config/constants";
 import {
   FaCheckCircle,
@@ -113,6 +114,28 @@ function App() {
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  const [apiSlowNotice, setApiSlowNotice] = useState(null);
+
+  useEffect(() => {
+    const unsubSlow = subscribeApiSlowStatus((isSlow, message) => {
+      setApiSlowNotice(isSlow ? message : null);
+    });
+
+    const handleAuthExpired = (e) => {
+      showToast(e.detail?.message || "Session expired. Please log in again.", "warning");
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setShowForm(true);
+    };
+
+    window.addEventListener("finsight:auth-expired", handleAuthExpired);
+
+    return () => {
+      unsubSlow();
+      window.removeEventListener("finsight:auth-expired", handleAuthExpired);
+    };
+  }, [showToast]);
 
   const csvData = useMemo(() => {
     return transactions.map((item) => {
@@ -452,6 +475,14 @@ function App() {
           : "bg-[#000000] text-white"
       }`}
     >
+      {/* Cold boot / Slow API Notification Banner */}
+      {apiSlowNotice && (
+        <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-200 px-4 py-2 text-xs flex items-center justify-center gap-2 sticky top-0 z-50 backdrop-blur-md animate-pulse">
+          <FaExclamationTriangle className="text-amber-400 shrink-0" />
+          <span>{apiSlowNotice}</span>
+        </div>
+      )}
+
       {/* Animated Splash Screen - rendered ONLY when opened as an installed PWA / standalone container */}
       {isApp && <SplashScreen isLoading={showSplash} isApp={isApp} />}
 

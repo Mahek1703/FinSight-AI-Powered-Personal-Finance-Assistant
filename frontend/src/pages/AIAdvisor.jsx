@@ -500,7 +500,7 @@ Keep it encouraging, punchy, and easy to understand for beginners.
                   {isAiUnavailable ? <FaExclamationTriangle /> : <FaRobot />}
                   <span>
                     {isAiUnavailable
-                      ? "AI is unavailable, showing a summary computed from your data"
+                      ? "computed from your data, AI unavailable"
                       : "FinSight AI Financial Insight"}
                   </span>
                 </div>

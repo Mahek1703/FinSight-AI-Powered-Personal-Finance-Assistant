@@ -1,7 +1,7 @@
 /**
  * Gemini Vision OCR Service
  * Converts receipt and invoice images into structured expense transactions
- * using Google Gemini 1.5 Flash Vision API.
+ * using Google Gemini AI Vision API.
  */
 import { apiFetch } from "./apiClient.js";
 import {
@@ -131,55 +131,7 @@ export const sanitizeAndParseGeminiResponse = (rawText) => {
 };
 
 /**
- * Intelligent client-side heuristic OCR fallback if offline or API key unavailable
- */
-const generateHeuristicFallback = (fileName = "") => {
-  const lowerName = fileName.toLowerCase();
-  let merchant = "Retail Store";
-  let category = "Shopping";
-  let amount = 249.00;
-  let paymentType = "Credit";
-  let description = "Store receipt purchase";
-
-  if (lowerName.includes("food") || lowerName.includes("swiggy") || lowerName.includes("zomato") || lowerName.includes("cafe") || lowerName.includes("starbucks") || lowerName.includes("restaurant") || lowerName.includes("dining")) {
-    merchant = lowerName.includes("starbucks") ? "Starbucks Coffee" : lowerName.includes("swiggy") ? "Swiggy" : lowerName.includes("zomato") ? "Zomato" : "Bistro Dining";
-    category = "Food";
-    amount = 380.00;
-    paymentType = "Online";
-    description = "Meal & Refreshments";
-  } else if (lowerName.includes("fuel") || lowerName.includes("uber") || lowerName.includes("petrol") || lowerName.includes("ola") || lowerName.includes("travel")) {
-    merchant = lowerName.includes("uber") ? "Uber Ride" : lowerName.includes("petrol") || lowerName.includes("fuel") ? "HP Petrol Pump" : "City Transit";
-    category = "Travel";
-    amount = 520.00;
-    paymentType = "Online";
-    description = "Transit & Travel Expense";
-  } else if (lowerName.includes("bill") || lowerName.includes("wifi") || lowerName.includes("electric") || lowerName.includes("airtel") || lowerName.includes("jio")) {
-    merchant = lowerName.includes("airtel") ? "Airtel Broadband" : lowerName.includes("jio") ? "Jio Fiber" : "Utility Bill";
-    category = "Bills";
-    amount = 999.00;
-    paymentType = "Debit";
-    description = "Monthly Utility Bill";
-  } else if (lowerName.includes("amazon") || lowerName.includes("flipkart") || lowerName.includes("shop") || lowerName.includes("mart")) {
-    merchant = lowerName.includes("amazon") ? "Amazon India" : "Supermarket Retail";
-    category = "Shopping";
-    amount = 1250.00;
-    paymentType = "Credit";
-    description = "Household Supplies";
-  }
-
-  return {
-    merchant,
-    date: new Date().toISOString().slice(0, 10),
-    totalAmount: amount,
-    category,
-    description,
-    paymentType,
-    isFallback: true,
-  };
-};
-
-/**
- * Scan receipt image using Gemini Vision API with fallbacks
+ * Scan receipt image using backend AI Vision service
  * @param {File|Blob} imageFile - The receipt image file
  * @returns {Promise<Object>} Structured receipt transaction details
  */
@@ -191,48 +143,40 @@ export const scanReceiptWithGemini = async (imageFile) => {
   // 1. Extract base64
   const { base64Data, mimeType, fullDataUrl } = await fileToBase64(imageFile);
 
-  // Primary: Call Backend Gemini Vision OCR Proxy
-  try {
-    const backendResponse = await apiFetch("/api/ai/scan-receipt", {
-      method: "POST",
-      body: JSON.stringify({
-        imageBase64: base64Data,
-        mimeType: mimeType || "image/jpeg",
-        prompt: GEMINI_PROMPT,
-      }),
-    });
+  // Call Backend AI Vision OCR Proxy
+  const backendResponse = await apiFetch("/api/ai/scan-receipt", {
+    method: "POST",
+    body: JSON.stringify({
+      imageBase64: base64Data,
+      mimeType: mimeType || "image/jpeg",
+      prompt: GEMINI_PROMPT,
+    }),
+  });
 
-    if (backendResponse.ok) {
-      const backendData = await backendResponse.json();
-      if (backendData.success && (backendData.data || backendData.response)) {
-        const rawContent = backendData.data || backendData.response;
-        const parsed = typeof rawContent === "object"
-          ? rawContent
-          : sanitizeAndParseGeminiResponse(rawContent);
-
-        return {
-          merchant: parsed.merchant || "Store Merchant",
-          date: parsed.date || new Date().toISOString().slice(0, 10),
-          totalAmount: Number(parsed.totalAmount || parsed.amount || 0),
-          category: normalizeReceiptCategory(parsed.category),
-          description: parsed.description || "Receipt expense",
-          paymentType: normalizePaymentType(parsed.paymentType),
-          previewUrl: fullDataUrl,
-          fileName: imageFile.name,
-          fileSize: imageFile.size,
-        };
-      }
-    }
-  } catch (backendErr) {
-    console.warn("Backend Gemini Vision Proxy warning:", backendErr.message || backendErr);
+  const backendData = await backendResponse.json();
+  if (!backendResponse.ok || !backendData.success) {
+    throw new Error(
+      backendData.message || "Failed to extract expense details from the receipt."
+    );
   }
 
-  // Strategy C: Simulated Heuristic Parser Fallback with realistic OCR latency simulation
-  await new Promise((r) => setTimeout(r, 1200));
-  const fallback = generateHeuristicFallback(imageFile.name || "receipt.jpg");
+  const rawContent = backendData.data || backendData.response;
+  if (!rawContent) {
+    throw new Error("Receipt analysis did not produce transaction data.");
+  }
+
+  const parsed =
+    typeof rawContent === "object"
+      ? rawContent
+      : sanitizeAndParseGeminiResponse(rawContent);
 
   return {
-    ...fallback,
+    merchant: parsed.merchant || "Store Merchant",
+    date: parsed.date || new Date().toISOString().slice(0, 10),
+    totalAmount: Number(parsed.totalAmount || parsed.amount || 0),
+    category: normalizeReceiptCategory(parsed.category),
+    description: parsed.description || `${parsed.merchant || "Receipt"} expense`,
+    paymentType: normalizePaymentType(parsed.paymentType),
     previewUrl: fullDataUrl,
     fileName: imageFile.name,
     fileSize: imageFile.size,
