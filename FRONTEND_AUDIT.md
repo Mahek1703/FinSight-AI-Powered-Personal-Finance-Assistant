@@ -31,7 +31,7 @@ Scope: Frontend application (`frontend/`), Firestore rules, environment config, 
   - `README.md:49`: References `gemini-2.5-flash` (unsupported/non-existent model name).
   - `backend/.env.example:18-19`: References `gemini-2.5-flash` and `gemini-1.5-flash` (both retired / being retired per Google Gemini deprecation timeline).
   - `frontend/src`: Zero occurrences of any Gemini model name. Model selection is handled purely on the backend.
-  - **Resolution for F2:** Standardize to Google's official, current model `gemini-2.0-flash` across backend configuration and documentation.
+  - **Resolution:** Standardize to Google's official, current model `gemini-3.5-flash` (no shutdown date announced) across backend configuration and documentation.
 
 ### 1.3 URLs in Source
 - **Status:** **PASS**

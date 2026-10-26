@@ -101,8 +101,9 @@ This document details all deletions, creations, modifications, architectural dec
   - Initialized Admin SDK with `cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))`.
   - Exits with clear diagnostic guidance if credentials are missing in production.
 - `backend/src/services/gemini.service.js`:
-  - Replaced hardcoded model fallbacks with `process.env.GEMINI_MODEL` (configured for current `gemini-2.0-flash`).
-  - Added dynamic fallback chain driven by `GEMINI_FALLBACK_MODELS`.
+  - Replaced hardcoded model fallbacks with `process.env.GEMINI_MODEL` (configured for current `gemini-3.5-flash`).
+  - Validates `process.env.GEMINI_MODEL` at module startup and fails with a clear error if missing.
+  - Dynamically allows fallback chain driven by `GEMINI_FALLBACK_MODELS`.
 - `backend/src/controllers/ai.controller.js` & `gmail.controller.js`:
   - Protected all routes with `verifyFirebaseToken` middleware.
   - Added request body size, type, and MIME-type validations.
@@ -183,7 +184,7 @@ All required verification suites passed successfully:
 ## Phase F2: Zero Hardcoding & Fake Content Elimination
 - Removed all fake statistics ("10k+ users", "4.9 rating"), fake logos, and testimonials from `Landing.jsx` and `landing.css`. Kept honest product and feature copy.
 - Enforced user-preference driven currency and locale (`users/{uid}/settings/preferences`) via `formatCurrency` in `constants.js`. Eliminated inline `toLocaleString("en-IN")`.
-- Updated Gemini model references: removed deprecated/retired model names (`gemini-1.5-*`, `gemini-2.5-*`) in favor of Google's active `gemini-2.0-flash`.
+- Updated Gemini model references: removed deprecated/retired model names (`gemini-1.5-*`, `gemini-2.0-*`, `gemini-2.5-*`) in favor of Google's active `gemini-3.5-flash` (no shutdown date announced on Google deprecations schedule).
 - Verified frontend contains zero model identifiers and zero AI API keys. All AI operations flow exclusively through the backend.
 
 ## Phase F3: Authenticated API Client & Graceful Degradation

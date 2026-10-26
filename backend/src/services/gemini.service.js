@@ -3,24 +3,24 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
+const GEMINI_MODEL = (process.env.GEMINI_MODEL || "").trim();
+if (!GEMINI_MODEL) {
+  throw new Error(
+    "GEMINI_MODEL is not configured in backend environment variables. Please set GEMINI_MODEL in your environment."
+  );
+}
+
 /**
- * Returns prioritized array of Gemini models from environment settings
+ * Returns prioritized array of Gemini models from environment settings (no hardcoded fallback models).
  */
 const getModelCandidates = () => {
-  const primaryModel = (process.env.GEMINI_MODEL || "").trim();
   const fallbacksEnv = (process.env.GEMINI_FALLBACK_MODELS || "").trim();
   const fallbacks = fallbacksEnv
     .split(",")
     .map((m) => m.trim())
     .filter(Boolean);
 
-  const list = [primaryModel, ...fallbacks].filter(Boolean);
-  if (list.length === 0) {
-    throw new Error(
-      "GEMINI_MODEL is not configured in backend environment variables. Please set GEMINI_MODEL in your environment."
-    );
-  }
-  return Array.from(new Set(list));
+  return Array.from(new Set([GEMINI_MODEL, ...fallbacks]));
 };
 
 /**
