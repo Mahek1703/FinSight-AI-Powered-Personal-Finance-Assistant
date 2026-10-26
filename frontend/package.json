@@ -1,18 +1,18 @@
 {
-  "name": "-latest",
+  "name": "finsight-ai",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "prisma generate && next build",
-    "build:vite": "vite build",
-    "postinstall": "prisma generate",
+    "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:rules": "vitest run src/test/firestore.rules.test.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
     "@tailwindcss/vite": "^4.3.3",
     "firebase": "^12.15.0",
     "framer-motion": "^14.3.0",
@@ -28,6 +28,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
@@ -35,8 +38,9 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "prisma": "^5.22.0",
+    "jsdom": "^29.1.1",
     "vite": "^7.2.4",
-    "vite-plugin-pwa": "^1.3.0"
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^5.0.5"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   FaMicrophone,
   FaTimes,
@@ -22,6 +22,7 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import { parseVoiceWithGemini } from "../../services/geminiVoice.service";
+import { formatCurrency } from "../../config/constants";
 
 const getCategoryIcon = (category = "") => {
   const cat = (category || "").toLowerCase();
@@ -69,25 +70,37 @@ export default function VoiceAssistantModal({
     typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
-  // Stop recognition on unmount or close
-  useEffect(() => {
-    if (!isOpen) {
-      stopListening();
-      setState("idle");
-      setTranscript("");
-      setInterimTranscript("");
-      setParsedResult(null);
-      setErrorMessage("");
-    } else {
-      // Auto-start listening on open
-      startListening();
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
     }
-    return () => {
-      stopListening();
-    };
-  }, [isOpen, language]);
+  }, []);
 
-  const startListening = () => {
+  const processWithAI = useCallback(async (textToParse) => {
+    const clean = String(textToParse || "").trim();
+    if (!clean) return;
+
+    stopListening();
+    setState("processing");
+    setTranscript(clean);
+
+    try {
+      const parsed = await parseVoiceWithGemini(clean);
+      setParsedResult(parsed);
+      setState("preview");
+    } catch (err) {
+      console.error("AI Voice parsing error:", err);
+      setState("error");
+      setErrorMessage(err.message || "Failed to parse transaction via voice AI.");
+    }
+  }, [stopListening]);
+
+  const startListening = useCallback(() => {
     setErrorMessage("");
     setParsedResult(null);
     setTranscript("");
@@ -153,9 +166,7 @@ export default function VoiceAssistantModal({
       };
 
       recognition.onend = () => {
-        if (state === "listening" && !transcript) {
-          setState("idle");
-        }
+        setState((prev) => (prev === "listening" ? "idle" : prev));
       };
 
       recognitionRef.current = recognition;
@@ -164,37 +175,92 @@ export default function VoiceAssistantModal({
       console.warn("Failed to initialize speech recognition:", err);
       setState("idle");
     }
-  };
+  }, [language, processWithAI, speechSupported]);
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch {
-        // ignore
-      }
-      recognitionRef.current = null;
+  const [prevOpen, setPrevOpen] = useState(isOpen);
+  if (prevOpen !== isOpen) {
+    setPrevOpen(isOpen);
+    setState("idle");
+    setTranscript("");
+    setInterimTranscript("");
+    setParsedResult(null);
+    setErrorMessage("");
+  }
+
+  // Handle listening on open / stop on close or unmount
+  useEffect(() => {
+    if (!isOpen) {
+      stopListening();
+      return;
     }
-  };
 
-  const processWithAI = async (textToParse) => {
-    const clean = String(textToParse || transcript || interimTranscript).trim();
-    if (!clean) return;
-
-    stopListening();
-    setState("processing");
-    setTranscript(clean);
+    if (!speechSupported) return;
 
     try {
-      const parsed = await parseVoiceWithGemini(clean);
-      setParsedResult(parsed);
-      setState("preview");
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = language;
+
+      recognition.onstart = () => {
+        setState("listening");
+      };
+
+      recognition.onresult = (event) => {
+        let currentInterim = "";
+        let finalTrans = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const item = event.results[i];
+          if (item.isFinal) {
+            finalTrans += item[0].transcript;
+          } else {
+            currentInterim += item[0].transcript;
+          }
+        }
+
+        if (currentInterim) {
+          setInterimTranscript(currentInterim);
+        }
+
+        if (finalTrans) {
+          setTranscript(finalTrans);
+          setInterimTranscript("");
+          processWithAI(finalTrans);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.warn("Speech recognition error:", event.error);
+        if (event.error === "no-speech") {
+          setState("idle");
+          setErrorMessage("No voice detected. Tap the microphone and try speaking again.");
+        } else if (event.error === "not-allowed") {
+          setState("error");
+          setErrorMessage(
+            "Microphone access blocked. Please allow microphone permissions in your browser bar."
+          );
+        } else {
+          setState("idle");
+        }
+      };
+
+      recognition.onend = () => {
+        setState((prev) => (prev === "listening" ? "idle" : prev));
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
     } catch (err) {
-      console.error("AI Voice parsing error:", err);
-      setState("error");
-      setErrorMessage("Could not parse audio: " + (err.message || String(err)));
+      console.warn("Failed to initialize speech recognition:", err);
     }
-  };
+
+    return () => {
+      stopListening();
+    };
+  }, [isOpen, language, processWithAI, speechSupported, stopListening]);
 
   const handleConfirmAndSave = async () => {
     if (!parsedResult) return;
@@ -215,7 +281,7 @@ export default function VoiceAssistantModal({
       await onSaveTransaction(payload);
       setState("success");
       showToast(
-        `Logged ₹${payload.amount.toLocaleString("en-IN")} for ${payload.category} via Voice AI!`,
+        `Logged ${formatCurrency(payload.amount)} for ${payload.category} via Voice AI!`,
         "success"
       );
 
@@ -420,7 +486,7 @@ export default function VoiceAssistantModal({
                   <div>
                     <span className="text-[11px] text-zinc-400 block font-medium">Parsed Amount</span>
                     <h3 className="text-2xl sm:text-3xl font-black text-white">
-                      ₹{Number(parsedResult.amount || 0).toLocaleString("en-IN")}
+                      {formatCurrency(Number(parsedResult.amount || 0))}
                     </h3>
                   </div>
 

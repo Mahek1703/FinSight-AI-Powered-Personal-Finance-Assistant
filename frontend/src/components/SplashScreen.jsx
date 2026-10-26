@@ -1,7 +1,5 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect } from "react";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 
 /**
  * Animated Splash Screen for FinSight AI
@@ -23,36 +21,16 @@ export default function SplashScreen({
   statusMessage = "Initializing financial command center...",
   onAnimationComplete,
 }) {
-  const [isApp, setIsApp] = useState(() => {
-    if (typeof isAppProp === "boolean") return isAppProp;
-    if (typeof window !== "undefined") {
-      return Boolean(
-        (window.matchMedia &&
-          window.matchMedia("(display-mode: standalone)").matches) ||
-          window.navigator?.standalone
-      );
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (typeof isAppProp === "boolean") {
-      setIsApp(isAppProp);
-      return;
-    }
-
-    const isStandalone =
-      (typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(display-mode: standalone)").matches) ||
-      (typeof window !== "undefined" && Boolean(window.navigator?.standalone));
-
-    if (isStandalone) {
-      setIsApp(true);
-    } else {
-      setIsApp(false);
-    }
-  }, [isAppProp]);
+  const isApp =
+    typeof isAppProp === "boolean"
+      ? isAppProp
+      : typeof window !== "undefined"
+      ? Boolean(
+          (window.matchMedia &&
+            window.matchMedia("(display-mode: standalone)").matches) ||
+            window.navigator?.standalone
+        )
+      : false;
 
   // Prevent background scrolling while the splash screen is visible
   useEffect(() => {
@@ -75,7 +53,7 @@ export default function SplashScreen({
   return (
     <AnimatePresence onExitComplete={onAnimationComplete}>
       {isLoading && (
-        <motion.div
+        <Motion.div
           key="finsight-splash-screen"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
@@ -91,7 +69,7 @@ export default function SplashScreen({
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.12)_0%,_rgba(0,0,0,0.92)_65%,_#000000_100%)] pointer-events-none" />
 
           {/* Decorative Subtle Glowing Pulse Orbs */}
-          <motion.div
+          <Motion.div
             animate={{
               scale: [1, 1.15, 1],
               opacity: [0.15, 0.3, 0.15],
@@ -104,7 +82,7 @@ export default function SplashScreen({
             className="absolute w-80 h-80 rounded-full bg-emerald-500/20 blur-[100px] pointer-events-none"
           />
 
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, scale: 0.88, y: 18 }}
             animate={{
               opacity: 1,
@@ -190,7 +168,7 @@ export default function SplashScreen({
               {/* High-End Ring Spinner */}
               <div className="relative w-8 h-8 flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-2 border-emerald-500/15" />
-                <motion.div
+                <Motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
                   className="w-full h-full rounded-full border-2 border-transparent border-t-emerald-400 border-r-emerald-400/60"
@@ -203,14 +181,14 @@ export default function SplashScreen({
                 {statusMessage}
               </p>
             </div>
-          </motion.div>
+          </Motion.div>
 
           {/* Bottom Version / Security Tag */}
           <div className="absolute bottom-6 flex items-center gap-2 text-[10px] text-zinc-600 font-mono tracking-wider">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-ping" />
             <span>SECURE SESSION • V1.0</span>
           </div>
-        </motion.div>
+        </Motion.div>
       )}
     </AnimatePresence>
   );

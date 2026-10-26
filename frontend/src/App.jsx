@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import "./index.css";
-import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import AppRoutes from "./routes/AppRoutes";
 import Navbar from "./components/Navbar";
 import SplashScreen from "./components/SplashScreen";
@@ -12,14 +10,18 @@ import MobileBottomNav from "./components/navigation/MobileBottomNav";
 import VoiceAssistantModal from "./components/voice/VoiceAssistantModal";
 import FloatingVoiceButton from "./components/voice/FloatingVoiceButton";
 import { auth } from "./firebase";
+import { validateEnv } from "./config/env";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   addTransaction,
-  addImportedTransaction,
   deleteTransaction,
   subscribeFinanceData,
+  subscribeSettings,
   updateTransaction,
+  migrateLocalStorageToFirestore,
 } from "./services/firestore";
+import { subscribeApiSlowStatus } from "./services/apiClient";
+import { formatCurrency, DEFAULT_ACCOUNTS, setUserPreferences, DEFAULT_CURRENCY, DEFAULT_LOCALE } from "./config/constants";
 import {
   FaCheckCircle,
   FaExclamationCircle,
@@ -54,40 +56,69 @@ const normalizeImportRow = (item) => {
 };
 
 function App() {
+  const envValidation = useMemo(() => validateEnv(), []);
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
+  const [pwaReloadHandler, setPwaReloadHandler] = useState(null);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    const handlePwaRefresh = (e) => {
+      if (e.detail?.reload) {
+        setPwaReloadHandler(() => e.detail.reload);
+      }
+    };
+    window.addEventListener("finsight:pwa-refresh", handlePwaRefresh);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("finsight:pwa-refresh", handlePwaRefresh);
+    };
+  }, []);
+
   const location = useLocation();
   const isLanding = location.pathname === "/";
 
   const [showForm, setShowForm] = useState(false);
-  const [isApp, setIsApp] = useState(false);
-  const [showSplash, setShowSplash] = useState(false);
+  const [isApp] = useState(() => {
+    return Boolean(
+      (typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
+        (typeof window !== "undefined" && window.navigator?.standalone)
+    );
+  });
+  const [showSplash, setShowSplash] = useState(() => {
+    return Boolean(
+      (typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
+        (typeof window !== "undefined" && window.navigator?.standalone)
+    );
+  });
   const [globalAddModalOpen, setGlobalAddModalOpen] = useState(false);
 
   // Splash Screen Logic: ONLY display when opened as an installed PWA or native web app container.
   // Standard web browser sessions bypass the splash screen completely.
   useEffect(() => {
-    const isStandalone =
-      (typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(display-mode: standalone)").matches) ||
-      (typeof window !== "undefined" && Boolean(window.navigator?.standalone));
-
-    if (isStandalone) {
-      setIsApp(true);
-      setShowSplash(true);
-      const splashTimer = setTimeout(() => {
-        setShowSplash(false);
-      }, 2000);
-
-      return () => clearTimeout(splashTimer);
-    } else {
-      setIsApp(false);
+    if (!showSplash) return;
+    const splashTimer = setTimeout(() => {
       setShowSplash(false);
-    }
-  }, []);
+    }, 2000);
+
+    return () => clearTimeout(splashTimer);
+  }, [showSplash]);
   const [globalVoiceModalOpen, setGlobalVoiceModalOpen] = useState(false);
   const [manualVoicePreset, setManualVoicePreset] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [themeMode, setThemeMode] = useState(
     () => localStorage.getItem("finsightTheme") || "dark"
   );
@@ -107,6 +138,28 @@ function App() {
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  const [apiSlowNotice, setApiSlowNotice] = useState(null);
+
+  useEffect(() => {
+    const unsubSlow = subscribeApiSlowStatus((isSlow, message) => {
+      setApiSlowNotice(isSlow ? message : null);
+    });
+
+    const handleAuthExpired = (e) => {
+      showToast(e.detail?.message || "Session expired. Please log in again.", "warning");
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setShowForm(true);
+    };
+
+    window.addEventListener("finsight:auth-expired", handleAuthExpired);
+
+    return () => {
+      unsubSlow();
+      window.removeEventListener("finsight:auth-expired", handleAuthExpired);
+    };
+  }, [showToast]);
 
   const csvData = useMemo(() => {
     return transactions.map((item) => {
@@ -158,12 +211,18 @@ function App() {
   // Strict user-scoped authentication & real-time Firestore sync
   useEffect(() => {
     let currentFirestoreUnsub = null;
+    let currentSettingsUnsub = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      // 1. Immediately unsubscribe from previous user's Firestore listener
+      setAuthLoading(false);
+      // 1. Immediately unsubscribe from previous user's Firestore listeners
       if (typeof currentFirestoreUnsub === "function") {
         currentFirestoreUnsub();
         currentFirestoreUnsub = null;
+      }
+      if (typeof currentSettingsUnsub === "function") {
+        currentSettingsUnsub();
+        currentSettingsUnsub = null;
       }
 
       if (user) {
@@ -171,7 +230,17 @@ function App() {
         setCurrentUser(user);
         setLoadingData(true);
 
-        // 2. Subscribe strictly to authenticated user's transactions (users/{user.uid}/transactions)
+        // One-time localStorage migration to Firestore & default account seeding
+        migrateLocalStorageToFirestore(user.uid, DEFAULT_ACCOUNTS);
+
+        // Subscribe to user preferences (currency, locale) in real-time
+        currentSettingsUnsub = subscribeSettings(user.uid, (pref) => {
+          if (pref) {
+            setUserPreferences(pref);
+          }
+        });
+
+        // 2. Subscribe strictly to authenticated user's transactions
         currentFirestoreUnsub = subscribeFinanceData(
           user.uid,
           ({ transactions: liveTransactions }) => {
@@ -191,6 +260,7 @@ function App() {
         setTransactions([]);
         setUploadedFiles([]);
         setLoadingData(false);
+        setUserPreferences({ currency: DEFAULT_CURRENCY, locale: DEFAULT_LOCALE });
 
         // 4. Purge local and session storage caches to eliminate cross-account residual leakage
         try {
@@ -210,6 +280,9 @@ function App() {
     return () => {
       if (typeof currentFirestoreUnsub === "function") {
         currentFirestoreUnsub();
+      }
+      if (typeof currentSettingsUnsub === "function") {
+        currentSettingsUnsub();
       }
       unsubscribeAuth();
     };
@@ -256,32 +329,17 @@ function App() {
     }
 
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
-
-    if (uid) {
-      try {
-        await Promise.all(normalizedRows.map((row) => addImportedTransaction(row, uid)));
-        showToast(`${normalizedRows.length} records synced to Firestore!`, "success");
-      } catch (err) {
-        console.error("Firestore Error:", err);
-        showToast(
-          `Imported ${normalizedRows.length} records to local state (Firestore: ${err.message})`,
-          "warning"
-        );
-      }
+    if (!uid) {
+      showToast("Please log in to import transactions.", "error");
+      return;
     }
 
-    setTransactions((prev) => {
-      const newItems = normalizedRows.map((r, idx) => ({
-        ...r,
-        id: `import_${Date.now()}_${idx}`,
-        userId: uid || null,
-        createdAt: new Date().toISOString(),
-      }));
-      return [...newItems, ...prev];
-    });
-
-    if (!uid) {
-      showToast(`${normalizedRows.length} records imported successfully!`, "success");
+    try {
+      await Promise.all(normalizedRows.map((row) => addTransaction(row, uid)));
+      showToast(`${normalizedRows.length} records saved to Firestore!`, "success");
+    } catch (err) {
+      console.error("Firestore import error:", err);
+      showToast(`Import failed: ${err.message || String(err)}`, "error");
     }
   };
 
@@ -294,6 +352,8 @@ function App() {
       const extension = file.name.split(".").pop().toLowerCase();
 
       if (extension === "csv") {
+        const PapaModule = await import("papaparse");
+        const Papa = PapaModule.default || PapaModule;
         Papa.parse(file, {
           header: true,
           skipEmptyLines: true,
@@ -304,6 +364,7 @@ function App() {
       }
 
       if (extension === "xlsx" || extension === "xls") {
+        const XLSX = await import("xlsx");
         const reader = new FileReader();
         reader.onload = async (e) => {
           const workbook = XLSX.read(e.target.result, { type: "binary" });
@@ -326,12 +387,17 @@ function App() {
 
   const handleSaveTransaction = async (transaction, editingTransaction = null) => {
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
+    if (!uid) {
+      showToast("Please log in to save transactions.", "error");
+      return false;
+    }
+
     const isIncome = String(transaction.type || "").toLowerCase() === "income";
     const type = isIncome ? "Income" : "Expense";
     const amount = Number(transaction.amount);
 
     const payload = {
-      userId: uid || null,
+      userId: uid,
       type,
       amount,
       date: transaction.date || new Date().toISOString().slice(0, 10),
@@ -343,61 +409,36 @@ function App() {
     };
 
     if (editingTransaction) {
-      const targetId = editingTransaction.firestoreId || editingTransaction.id;
-
-      if (uid && editingTransaction.firestoreId) {
-        try {
-          const res = await updateTransaction(
-            { ...editingTransaction, ...payload },
-            uid
-          );
-          if (!res.success) {
-            console.warn("Firestore update fallback:", res.error);
-          }
-        } catch (err) {
-          console.warn("Firestore update exception:", err);
-        }
-      }
-
-      setTransactions((prev) => {
-        return prev.map((item) =>
-          item.id === targetId || item.firestoreId === targetId
-            ? { ...item, ...payload, id: item.id || targetId }
-            : item
+      try {
+        const res = await updateTransaction(
+          { ...editingTransaction, ...payload },
+          uid
         );
-      });
-
-      showToast("Transaction updated successfully!", "success");
-      return true;
-    } else {
-      let firestoreOk = false;
-      let newDocId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-
-      if (uid) {
-        try {
-          const res = await addTransaction(payload, uid);
-          if (res.success) {
-            firestoreOk = true;
-            if (res.id) newDocId = res.id;
-          } else {
-            console.warn("Firestore write fallback:", res.error);
-          }
-        } catch (err) {
-          console.warn("Firestore write exception:", err);
+        if (res.success) {
+          showToast("Transaction updated successfully!", "success");
+          return true;
+        } else {
+          showToast(`Failed to update transaction: ${res.error}`, "error");
+          return false;
         }
+      } catch (err) {
+        showToast(`Failed to update transaction: ${err.message || String(err)}`, "error");
+        return false;
       }
-
-      const newTx = {
-        ...payload,
-        id: newDocId,
-        firestoreId: firestoreOk ? newDocId : null,
-        createdAt: new Date().toISOString(),
-      };
-
-      setTransactions((prev) => [newTx, ...prev]);
-
-      showToast("Transaction saved successfully!", "success");
-      return true;
+    } else {
+      try {
+        const res = await addTransaction(payload, uid);
+        if (res.success) {
+          showToast("Transaction saved successfully!", "success");
+          return true;
+        } else {
+          showToast(`Failed to save transaction: ${res.error}`, "error");
+          return false;
+        }
+      } catch (err) {
+        showToast(`Failed to save transaction: ${err.message || String(err)}`, "error");
+        return false;
+      }
     }
   };
 
@@ -405,29 +446,53 @@ function App() {
     const title =
       transaction.Category || transaction.category || "this transaction";
     const amt = transaction.Amount || transaction.amount;
-    const confirmDelete = window.confirm(`Delete "${title}" for ₹${amt}?`);
+    const confirmDelete = window.confirm(`Delete "${title}" for ${formatCurrency(amt)}?`);
     if (!confirmDelete) return false;
 
     const uid = currentUser?.uid || auth.currentUser?.uid || null;
-    const targetId = transaction.firestoreId || transaction.id;
-
-    if (uid && transaction.firestoreId) {
-      const res = await deleteTransaction(transaction, uid);
-      if (!res.success) {
-        console.error("Firestore Error:", res.error);
-      }
+    if (!uid) {
+      showToast("Please log in to delete transactions.", "error");
+      return false;
     }
 
-    setTransactions((prev) => {
-      return prev.filter(
-        (item) =>
-          (item.firestoreId || item.id) !== targetId && item.id !== targetId
-      );
-    });
-
-    showToast("Transaction deleted.", "info");
-    return true;
+    try {
+      const res = await deleteTransaction(transaction, uid);
+      if (res.success) {
+        showToast("Transaction deleted.", "info");
+        return true;
+      } else {
+        showToast(`Failed to delete transaction: ${res.error}`, "error");
+        return false;
+      }
+    } catch (err) {
+      showToast(`Failed to delete transaction: ${err.message || String(err)}`, "error");
+      return false;
+    }
   };
+
+  if (!envValidation.isValid && !import.meta.env.DEV) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6 text-white font-sans">
+        <div className="max-w-md w-full rounded-2xl border border-red-500/40 bg-slate-900/95 p-8 shadow-2xl backdrop-blur-xl text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500 text-3xl">
+            <FaExclamationTriangle className="inline-block" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Configuration Required</h1>
+          <p className="text-sm text-slate-400 mb-6">
+            FinSight AI cannot start because essential environment variables are missing from this deployment.
+          </p>
+          <div className="rounded-xl bg-slate-950/80 p-4 border border-slate-800 text-left mb-6 font-mono text-xs text-red-400 space-y-1">
+            {envValidation.missing.map((v) => (
+              <div key={v}>• {v}</div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            Please configure these variables in your deployment settings (e.g. Vercel dashboard) and redeploy.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -437,6 +502,39 @@ function App() {
           : "bg-[#000000] text-white"
       }`}
     >
+      {/* PWA Update Ready Toast / Banner */}
+      {pwaReloadHandler && (
+        <div className="bg-blue-600/90 text-white px-4 py-2 text-xs flex items-center justify-between gap-3 sticky top-0 z-50 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-2">
+            <FaInfoCircle className="text-sm shrink-0" />
+            <span>A new version of FinSight AI is available.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => pwaReloadHandler()}
+            className="px-3 py-1 bg-white text-blue-700 font-bold rounded-lg text-xs hover:bg-blue-50 transition cursor-pointer"
+          >
+            Reload Now
+          </button>
+        </div>
+      )}
+
+      {/* Offline Status Banner */}
+      {!isOnline && (
+        <div className="bg-zinc-800/90 border-b border-zinc-700 text-zinc-300 px-4 py-1.5 text-xs flex items-center justify-center gap-2 sticky top-0 z-40 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span>Offline mode — viewing cached records. Writes will sync when reconnected.</span>
+        </div>
+      )}
+
+      {/* Cold boot / Slow API Notification Banner */}
+      {apiSlowNotice && (
+        <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-200 px-4 py-2 text-xs flex items-center justify-center gap-2 sticky top-0 z-50 backdrop-blur-md animate-pulse">
+          <FaExclamationTriangle className="text-amber-400 shrink-0" />
+          <span>{apiSlowNotice}</span>
+        </div>
+      )}
+
       {/* Animated Splash Screen - rendered ONLY when opened as an installed PWA / standalone container */}
       {isApp && <SplashScreen isLoading={showSplash} isApp={isApp} />}
 
@@ -495,6 +593,7 @@ function App() {
             csvData={csvData}
             loadingData={loadingData}
             isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
             currentUser={currentUser}
             setShowForm={setShowForm}
             uploadedFiles={uploadedFiles}
@@ -515,6 +614,7 @@ function App() {
             csvData={csvData}
             loadingData={loadingData}
             isLoggedIn={isLoggedIn}
+            authLoading={authLoading}
             currentUser={currentUser}
             setShowForm={setShowForm}
             uploadedFiles={uploadedFiles}

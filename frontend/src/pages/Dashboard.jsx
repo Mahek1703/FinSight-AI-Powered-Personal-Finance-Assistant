@@ -1,5 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, Component } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState, useEffect, Component } from "react";
 import {
   FaArrowDown,
   FaArrowRight,
@@ -49,20 +48,20 @@ import {
   FaEnvelopeOpenText,
   FaSyncAlt,
 } from "react-icons/fa";
+import { EXPENSE_CATEGORIES, formatCurrency, getCurrencySymbol } from "../config/constants.js";
 
-import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
 import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  doc,
-  deleteDoc,
-  updateDoc,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { auth, db } from "../firebase";
+  subscribeBudgets,
+  saveBudget,
+  subscribeGoals,
+  saveGoal,
+  subscribeBills,
+  saveBill,
+  batchAddTransactions,
+} from "../services/firestore.js";
+
+const expenseCategories = EXPENSE_CATEGORIES;
 
 import AddTransactionModal from "../components/AddTransactionModal";
 import DashboardHero from "../components/dashboard/DashboardHero";
@@ -76,9 +75,6 @@ import CashFlowForecastCard from "../components/dashboard/CashFlowForecastCard";
 import AnomalyAlertBanner from "../components/dashboard/AnomalyAlertBanner";
 import VoiceAssistantModal from "../components/voice/VoiceAssistantModal";
 
-
-
-
 import {
   parseStatementFile,
   validateStatementFile,
@@ -87,20 +83,7 @@ import {
   processAndSyncPurchaseEmails,
   parseEmailBatch,
 } from "../utils/emailParser";
-import { batchAddTransactions } from "../services/firestore";
 
-const expenseCategories = [
-  "Food",
-  "Bills",
-  "Fun",
-  "Shopping",
-  "Health",
-  "Travel",
-  "Education",
-  "Others",
-];
-
-const todayValue = () => new Date().toISOString().slice(0, 10);
 const cleanAmount = (value) =>
   Number(String(value || 0).replace(/[,+]/g, "")) || 0;
 
@@ -158,19 +141,15 @@ function DashboardContent({
   totalIncome = 0,
   totalExpense = 0,
   csvData = [],
-  onGmailTransactionsLoaded,
   loadingData = false,
-  isLoggedIn = false,
+  onGmailTransactionsLoaded,
   currentUser = null,
-  setShowForm = () => {},
   uploadedFiles = [],
   setUploadedFiles = () => {},
   onSaveTransaction = async () => true,
   onDeleteTransaction = async () => true,
   showToast = () => {},
 }) {
-  const navigate = useNavigate();
-
   // Active Segmented View Tab: 'overview' | 'budgets' | 'goals_bills' | 'sync'
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -180,8 +159,8 @@ function DashboardContent({
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [addGoalModalOpen, setAddGoalModalOpen] = useState(false);
   const [addBudgetModalOpen, setAddBudgetModalOpen] = useState(false);
-  const [addBillModalOpen, setAddBillModalOpen] = useState(false);
-
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
 
   // Editing state for modal
   const [editingTx, setEditingTx] = useState(null);
@@ -189,59 +168,36 @@ function DashboardContent({
   // Transient Gmail transactions for current session
   const [gmailTransactions, setGmailTransactions] = useState([]);
 
-  // Dynamic, user-scoped planning items (budgets, goals, bills)
-  const [bills, setBills] = useState(() => {
-    if (!currentUser?.uid) return [];
-    try {
-      const saved = localStorage.getItem(`finsight_bills_${currentUser.uid}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Dynamic, user-scoped planning items (budgets, goals, bills) synced to Firestore
+  const [bills, setBills] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [categoryBudgets, setCategoryBudgets] = useState([]);
 
-  const [goals, setGoals] = useState(() => {
-    if (!currentUser?.uid) return [];
-    try {
-      const saved = localStorage.getItem(`finsight_goals_${currentUser.uid}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [categoryBudgets, setCategoryBudgets] = useState(() => {
-    if (!currentUser?.uid) return [];
-    try {
-      const saved = localStorage.getItem(`finsight_budgets_${currentUser.uid}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Reset/reload user-scoped planning items on auth state change
-  useEffect(() => {
+  const [prevUid, setPrevUid] = useState(currentUser?.uid);
+  if (prevUid !== currentUser?.uid) {
+    setPrevUid(currentUser?.uid);
     setGmailTransactions([]);
-    if (currentUser?.uid) {
-      try {
-        const b = localStorage.getItem(`finsight_bills_${currentUser.uid}`);
-        setBills(b ? JSON.parse(b) : []);
-        const g = localStorage.getItem(`finsight_goals_${currentUser.uid}`);
-        setGoals(g ? JSON.parse(g) : []);
-        const c = localStorage.getItem(`finsight_budgets_${currentUser.uid}`);
-        setCategoryBudgets(c ? JSON.parse(c) : []);
-      } catch {
-        setBills([]);
-        setGoals([]);
-        setCategoryBudgets([]);
-      }
-    } else {
+    if (!currentUser?.uid) {
       setBills([]);
       setGoals([]);
       setCategoryBudgets([]);
     }
-  }, [currentUser]);
+  }
+
+  // Subscribe in real-time to user's planning items on Firestore
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const unsubBills = subscribeBills(currentUser.uid, (data) => setBills(data || []));
+    const unsubGoals = subscribeGoals(currentUser.uid, (data) => setGoals(data || []));
+    const unsubBudgets = subscribeBudgets(currentUser.uid, (data) => setCategoryBudgets(data || []));
+
+    return () => {
+      if (typeof unsubBills === "function") unsubBills();
+      if (typeof unsubGoals === "function") unsubGoals();
+      if (typeof unsubBudgets === "function") unsubBudgets();
+    };
+  }, [currentUser?.uid]);
 
   // Modal form temporary fields
   const [newGoalName, setNewGoalName] = useState("");
@@ -251,45 +207,6 @@ function DashboardContent({
 
   const [newBudgetCategory, setNewBudgetCategory] = useState("Food");
   const [newBudgetLimit, setNewBudgetLimit] = useState("");
-
-  const [newBillName, setNewBillName] = useState("");
-  const [newBillAmount, setNewBillAmount] = useState("");
-  const [newBillDueDate, setNewBillDueDate] = useState("In 7 days");
-
-  // Voice recognition states
-  const [isListening, setIsListening] = useState(false);
-  const [transcriptText, setTranscriptText] = useState("");
-
-  // Persist user-scoped planning items
-  useEffect(() => {
-    if (currentUser?.uid) {
-      try {
-        localStorage.setItem(`finsight_bills_${currentUser.uid}`, JSON.stringify(bills));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
-    }
-  }, [bills, currentUser]);
-
-  useEffect(() => {
-    if (currentUser?.uid) {
-      try {
-        localStorage.setItem(`finsight_goals_${currentUser.uid}`, JSON.stringify(goals));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
-    }
-  }, [goals, currentUser]);
-
-  useEffect(() => {
-    if (currentUser?.uid) {
-      try {
-        localStorage.setItem(`finsight_budgets_${currentUser.uid}`, JSON.stringify(categoryBudgets));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
-    }
-  }, [categoryBudgets, currentUser]);
 
   // Combined master transactions list strictly derived from csvData (user-scoped from App)
   const masterTransactions = useMemo(() => {
@@ -351,28 +268,7 @@ function DashboardContent({
 
   const handleDelete = async (tx) => {
     if (!tx) return;
-    try {
-      const uid = currentUser?.uid || auth.currentUser?.uid;
-      const targetId = tx.firestoreId || tx.id;
-
-      if (uid && targetId) {
-        const docRef = doc(db, "users", uid, "transactions", targetId);
-        await deleteDoc(docRef);
-        showToast("Transaction removed.", "info");
-        return;
-      }
-      await onDeleteTransaction(tx);
-    } catch (err) {
-      console.warn("Delete fallback:", err);
-      await onDeleteTransaction(tx);
-    }
-  };
-
-  const handleToggleBillPaid = (id) => {
-    setBills((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, paid: !b.paid } : b))
-    );
-    showToast("Bill payment status updated!", "success");
+    await onDeleteTransaction(tx);
   };
 
   // Gmail purchase sync handler
@@ -504,47 +400,105 @@ function DashboardContent({
     setVoiceModalOpen(true);
   };
 
-  // Form Submissions for Goals & Budgets
-  const handleAddGoalSubmit = (e) => {
+  // Form Submissions for Goals, Budgets, and Bills
+  const handleToggleBillPaid = async (billId) => {
+    const bill = bills.find((b) => b.id === billId || b.firestoreId === billId);
+    if (!bill) return;
+    const res = await saveBill({ ...bill, paid: !bill.paid }, currentUser?.uid);
+    if (!res.success) {
+      showToast(`Failed to update bill: ${res.error}`, "error");
+    }
+  };
+
+  const handleAddGoalSubmit = async (e) => {
     e.preventDefault();
     if (!newGoalName.trim() || !newGoalTarget) return;
 
-    const newG = {
-      id: Date.now(),
-      name: newGoalName.trim(),
-      target: cleanAmount(newGoalTarget),
-      current: cleanAmount(newGoalCurrent) || 0,
-      deadline: newGoalDeadline || "2026-12-31",
-      color: "#10b981",
-    };
+    const targetAmt = cleanAmount(newGoalTarget);
+    if (targetAmt <= 0) {
+      showToast("Goal target amount must be greater than zero.", "error");
+      return;
+    }
 
-    setGoals((prev) => [newG, ...prev]);
-    setNewGoalName("");
-    setNewGoalTarget("");
-    setNewGoalCurrent("0");
-    setAddGoalModalOpen(false);
-    showToast("Savings Goal bucket initialized!", "success");
+    setIsSavingGoal(true);
+    try {
+      const newG = {
+        name: newGoalName.trim(),
+        targetAmount: targetAmt,
+        currentAmount: cleanAmount(newGoalCurrent) || 0,
+        deadline: newGoalDeadline || "2026-12-31",
+        color: "#10b981",
+      };
+
+      const res = await saveGoal(newG, currentUser?.uid);
+      if (res.success) {
+        setNewGoalName("");
+        setNewGoalTarget("");
+        setNewGoalCurrent("0");
+        setAddGoalModalOpen(false);
+        showToast("Savings Goal bucket initialized!", "success");
+      } else {
+        showToast(`Failed to save goal: ${res.error}`, "error");
+      }
+    } finally {
+      setIsSavingGoal(false);
+    }
   };
 
-  const handleAddBudgetSubmit = (e) => {
+  const handleAddBudgetSubmit = async (e) => {
     e.preventDefault();
     if (!newBudgetLimit) return;
 
     const limitAmt = cleanAmount(newBudgetLimit);
-    setCategoryBudgets((prev) => {
-      const exists = prev.find((b) => b.category === newBudgetCategory);
-      if (exists) {
-        return prev.map((b) =>
-          b.category === newBudgetCategory ? { ...b, limit: limitAmt } : b
-        );
-      }
-      return [{ category: newBudgetCategory, limit: limitAmt }, ...prev];
-    });
+    if (limitAmt <= 0) {
+      showToast("Budget limit must be greater than zero.", "error");
+      return;
+    }
 
-    setNewBudgetLimit("");
-    setAddBudgetModalOpen(false);
-    showToast(`Monthly budget for ${newBudgetCategory} set to ₹${limitAmt}!`, "success");
+    setIsSavingBudget(true);
+    try {
+      const res = await saveBudget(
+        {
+          category: newBudgetCategory,
+          limit: limitAmt,
+        },
+        currentUser?.uid
+      );
+
+      if (res.success) {
+        setNewBudgetLimit("");
+        setAddBudgetModalOpen(false);
+        showToast(`Monthly budget for ${newBudgetCategory} set to ${formatCurrency(limitAmt)}!`, "success");
+      } else {
+        showToast(`Failed to save budget: ${res.error}`, "error");
+      }
+    } finally {
+      setIsSavingBudget(false);
+    }
   };
+
+  if (loadingData) {
+    return (
+      <div className="w-full space-y-6 pb-20 md:pb-8 animate-pulse">
+        <div className="h-64 rounded-3xl bg-zinc-900/60 border border-white/[0.04] p-8 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="h-4 w-32 bg-zinc-800 rounded-lg" />
+            <div className="h-10 w-64 bg-zinc-800 rounded-xl" />
+          </div>
+          <div className="flex gap-4">
+            <div className="h-12 w-36 bg-zinc-800 rounded-xl" />
+            <div className="h-12 w-36 bg-zinc-800 rounded-xl" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-32 rounded-2xl bg-zinc-900/40 border border-white/[0.04]" />
+          <div className="h-32 rounded-2xl bg-zinc-900/40 border border-white/[0.04]" />
+          <div className="h-32 rounded-2xl bg-zinc-900/40 border border-white/[0.04]" />
+        </div>
+        <div className="h-72 rounded-3xl bg-zinc-900/40 border border-white/[0.04]" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 pb-20 md:pb-8">
@@ -729,7 +683,7 @@ function DashboardContent({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Target Amount (₹)
+                    Target Amount ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -742,7 +696,7 @@ function DashboardContent({
                 </div>
                 <div>
                   <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Current Saved (₹)
+                    Current Saved ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -768,9 +722,11 @@ function DashboardContent({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
+                disabled={isSavingGoal}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaCheck className="text-emerald-400" /> Create Goal Bucket
+                <FaCheck className="text-emerald-400" />
+                <span>{isSavingGoal ? "Creating Goal..." : "Create Goal Bucket"}</span>
               </button>
             </form>
           </div>
@@ -820,7 +776,7 @@ function DashboardContent({
 
               <div>
                 <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Monthly Spending Limit (₹)
+                  Monthly Spending Limit ({getCurrencySymbol()})
                 </label>
                 <input
                   type="number"
@@ -835,9 +791,11 @@ function DashboardContent({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
+                disabled={isSavingBudget}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaCheck className="text-emerald-400" /> Save Budget Limit
+                <FaCheck className="text-emerald-400" />
+                <span>{isSavingBudget ? "Saving..." : "Save Budget Limit"}</span>
               </button>
             </form>
           </div>

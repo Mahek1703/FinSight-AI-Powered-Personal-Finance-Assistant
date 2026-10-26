@@ -17,15 +17,21 @@ import {
   FaLightbulb,
   FaWallet,
   FaArrowRight,
+  FaExclamationTriangle,
 } from "react-icons/fa";
+import {
+  formatCurrency,
+  getCurrencySymbol,
+  RISK_ALLOCATION,
+  SUGGESTED_TRANSFER_RATIO,
+} from "../config/constants.js";
 
 function AIAdvisor({
   totalBalance = 0,
   totalIncome = 0,
   totalExpense = 0,
-  csvData = [],
   onSaveTransaction = async () => true,
-  showToast = () => {},
+  loadingData = false,
 }) {
   const navigate = useNavigate();
 
@@ -43,6 +49,7 @@ function AIAdvisor({
   // AI states
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [isAiUnavailable, setIsAiUnavailable] = useState(false);
 
   // Dynamic Discretionary Cash Flow calculation
   const discretionaryCashFlow = useMemo(() => {
@@ -52,7 +59,7 @@ function AIAdvisor({
 
   const hasPositiveCashFlow = discretionaryCashFlow > 0;
 
-  const money = (val) => `₹${Number(val || 0).toLocaleString("en-IN")}`;
+  const money = (val) => formatCurrency(val);
 
   // Risk profile allocation models based strictly on dynamic cash flow
   const allocation = useMemo(() => {
@@ -102,18 +109,19 @@ function AIAdvisor({
     };
   }, [riskProfile, discretionaryCashFlow, hasPositiveCashFlow]);
 
-  // Gemini AI Request with intelligent financial fallback
+  // Gemini AI Request with computed financial fallback
   const handleAIAdvice = async () => {
     setAiLoading(true);
     setAiResponse("");
+    setIsAiUnavailable(false);
 
     const prompt = `
 You are FinSight AI, a premier personal finance assistant.
 Provide a concise, practical, and highly personalized financial insight for the user based on their numbers:
-- Total Monthly Income: ₹${totalIncome}
-- Total Monthly Expenses: ₹${totalExpense}
-- Available Cash Balance: ₹${totalBalance}
-- Unallocated Discretionary Cash Flow: ₹${discretionaryCashFlow}
+- Total Monthly Income: ${formatCurrency(totalIncome)}
+- Total Monthly Expenses: ${formatCurrency(totalExpense)}
+- Available Cash Balance: ${formatCurrency(totalBalance)}
+- Unallocated Discretionary Cash Flow: ${formatCurrency(discretionaryCashFlow)}
 - Chosen Risk Profile: ${riskProfile}
 
 Provide:
@@ -125,20 +133,24 @@ Keep it encouraging, punchy, and easy to understand for beginners.
     try {
       const result = await askAI(prompt);
       setAiResponse(result);
+      setIsAiUnavailable(false);
     } catch (error) {
       console.warn("AI Service fallback:", error);
+      setIsAiUnavailable(true);
+
+      const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0;
+      const riskConfig = RISK_ALLOCATION[riskProfile] || RISK_ALLOCATION.Moderate;
+      const suggestedTransfer = Math.round(discretionaryCashFlow * SUGGESTED_TRANSFER_RATIO);
+
       if (!hasPositiveCashFlow) {
-        const fallbackText = `💡 **FinSight AI Financial Assessment**:
-• **Cash Flow Health**: You currently have **₹0 unallocated discretionary cash flow** (Income: ₹${Number(totalIncome || 0).toLocaleString("en-IN")}, Expenses: ₹${Number(totalExpense || 0).toLocaleString("en-IN")}).
-• **Budgeting Priority**: Before deploying investment portfolios, focus on creating positive cash flow by auditing recurring subscriptions and variable spending.
-• **Action Step**: Log your recent income transactions in the Ledger to generate custom risk-weighted portfolio allocations.`;
+        const fallbackText = `• Cash Flow Health: You currently have ${formatCurrency(0)} unallocated discretionary cash flow (Income: ${formatCurrency(totalIncome)}, Expenses: ${formatCurrency(totalExpense)}).
+• Budgeting Priority: Before deploying investment portfolios, focus on creating positive cash flow by auditing recurring subscriptions and variable spending.
+• Action Step: Log your recent income transactions in the Ledger to generate custom risk-weighted portfolio allocations.`;
         setAiResponse(fallbackText);
       } else {
-        const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0;
-        const fallbackText = `💡 **FinSight AI Financial Assessment**:
-• **Cash Flow Health**: You are currently retaining **${savingsRate}%** of your monthly income (₹${discretionaryCashFlow.toLocaleString("en-IN")} surplus).
-• **${riskProfile} Allocation Recommendation**: Channel ${riskProfile === "Low" ? "30%" : riskProfile === "Aggressive" ? "70%" : "50%"} into diversified Nifty 50 Index funds, and split the remaining between fixed income and capital reserve.
-• **Action Step**: Automate a monthly transfer of ₹${Math.round(discretionaryCashFlow * 0.4).toLocaleString("en-IN")} within 24 hours of salary credit to prevent lifestyle inflation.`;
+        const fallbackText = `• Cash Flow Health: You are currently retaining ${savingsRate}% of your monthly income (${formatCurrency(discretionaryCashFlow)} surplus).
+• ${riskProfile} Allocation Target: Channel ${riskConfig.equity}% into diversified index funds, and split the remaining between fixed income and capital reserve.
+• Action Step: Automate a monthly transfer of ${formatCurrency(suggestedTransfer)} within 24 hours of salary credit to prevent lifestyle inflation.`;
         setAiResponse(fallbackText);
       }
     } finally {
@@ -162,6 +174,18 @@ Keep it encouraging, punchy, and easy to understand for beginners.
     setStrategyAmount("");
     setAddStrategyModal(false);
   };
+
+  if (loadingData) {
+    return (
+      <div className="w-full space-y-6 pb-20 md:pb-8 animate-pulse">
+        <div className="h-16 bg-zinc-900/60 rounded-2xl border border-white/[0.05]" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-96 bg-zinc-900/60 rounded-3xl border border-white/[0.05]" />
+          <div className="h-96 bg-zinc-900/60 rounded-3xl border border-white/[0.05]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 pb-20 md:pb-8">
@@ -239,7 +263,7 @@ Keep it encouraging, punchy, and easy to understand for beginners.
                     Discretionary Cash Flow
                   </span>
                   <strong className="text-base sm:text-lg font-extrabold text-white">
-                    {hasPositiveCashFlow ? money(discretionaryCashFlow) : "₹0"}
+                    {hasPositiveCashFlow ? money(discretionaryCashFlow) : formatCurrency(0)}
                     <small className="text-xs text-zinc-500 font-normal"> / month</small>
                   </strong>
                 </div>
@@ -435,7 +459,7 @@ Keep it encouraging, punchy, and easy to understand for beginners.
                     hasPositiveCashFlow ? "text-emerald-400" : "text-zinc-500"
                   }`}
                 >
-                  {hasPositiveCashFlow ? allocation.growthText : "₹0 (+0%)"}
+                  {hasPositiveCashFlow ? allocation.growthText : `${formatCurrency(0)} (+0%)`}
                 </span>
                 <span className="text-[11px] text-zinc-400">
                   {hasPositiveCashFlow
@@ -455,7 +479,7 @@ Keep it encouraging, punchy, and easy to understand for beginners.
                       <h5 className="text-xs font-bold text-white">{st.name}</h5>
                       <span className="text-[10px] text-zinc-500">{st.horizon}</span>
                     </div>
-                    <span className="text-xs font-bold text-emerald-400">₹{st.amount.toLocaleString("en-IN")}/mo</span>
+                    <span className="text-xs font-bold text-emerald-400">{formatCurrency(st.amount)}/mo</span>
                   </div>
                 ))}
               </div>
@@ -474,9 +498,24 @@ Keep it encouraging, punchy, and easy to understand for beginners.
 
             {/* AI Response Display */}
             {aiResponse && (
-              <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-500/30 text-xs text-zinc-200 space-y-2 animate-in fade-in">
-                <div className="flex items-center gap-2 font-bold text-purple-400">
-                  <FaRobot /> FinSight AI Financial Insight
+              <div
+                className={`p-4 rounded-2xl border text-xs space-y-2 animate-in fade-in ${
+                  isAiUnavailable
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                    : "bg-purple-950/20 border-purple-500/30 text-zinc-200"
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2 font-bold ${
+                    isAiUnavailable ? "text-amber-400" : "text-purple-400"
+                  }`}
+                >
+                  {isAiUnavailable ? <FaExclamationTriangle /> : <FaRobot />}
+                  <span>
+                    {isAiUnavailable
+                      ? "computed from your data, AI unavailable"
+                      : "FinSight AI Financial Insight"}
+                  </span>
                 </div>
                 <div className="leading-relaxed whitespace-pre-line text-[11px] sm:text-xs text-zinc-300">
                   {aiResponse}
@@ -548,7 +587,7 @@ Keep it encouraging, punchy, and easy to understand for beginners.
 
               <div>
                 <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Monthly Contribution (₹)
+                  Monthly Contribution ({getCurrencySymbol()})
                 </label>
                 <input
                   type="number"

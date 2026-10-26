@@ -4,7 +4,12 @@
  * READ-ONLY intelligence layer operating dynamically on transaction streams.
  */
 
-const STORAGE_KEY_DISMISSED = "finsight_dismissed_anomalies";
+import {
+  formatCurrency,
+  ANOMALY_SPIKE_STD_DEV_MULTIPLIER,
+  ANOMALY_SPIKE_SINGLE_ITEM_MULTIPLIER,
+  ANOMALY_DUPLICATE_WINDOW_HOURS,
+} from "../config/constants.js";
 
 /**
  * Clean & Parse numeric amount
@@ -12,7 +17,7 @@ const STORAGE_KEY_DISMISSED = "finsight_dismissed_anomalies";
 const toNum = (val) => {
   if (typeof val === "number") return isNaN(val) ? 0 : val;
   if (!val) return 0;
-  const cleaned = String(val).replace(/[₹$€, +]/g, "");
+  const cleaned = String(val).replace(/[\u20B9$€, +]/g, "");
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : Math.abs(num);
 };
@@ -35,41 +40,28 @@ const parseDate = (val) => {
   return isNaN(d.getTime()) ? new Date() : d;
 };
 
+const dismissedAnomaliesMemory = new Set();
+
 /**
- * Get dismissed anomaly IDs from localStorage
+ * Get dismissed anomaly IDs for the current session
  */
 export const getDismissedAnomalyIds = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY_DISMISSED);
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  } catch {
-    return new Set();
-  }
+  return new Set(dismissedAnomaliesMemory);
 };
 
 /**
- * Dismiss an anomaly by ID
+ * Dismiss an anomaly by ID for the current session
  */
 export const dismissAnomalyId = (anomalyId) => {
   if (!anomalyId) return;
-  try {
-    const set = getDismissedAnomalyIds();
-    set.add(anomalyId);
-    localStorage.setItem(STORAGE_KEY_DISMISSED, JSON.stringify(Array.from(set)));
-  } catch (err) {
-    console.warn("Failed to persist dismissed anomaly:", err);
-  }
+  dismissedAnomaliesMemory.add(anomalyId);
 };
 
 /**
  * Clear all dismissed anomaly IDs (for testing / reset)
  */
 export const clearDismissedAnomalies = () => {
-  try {
-    localStorage.removeItem(STORAGE_KEY_DISMISSED);
-  } catch {
-    // ignore
-  }
+  dismissedAnomaliesMemory.clear();
 };
 
 /**
@@ -84,15 +76,20 @@ export const calculateCategoryStats = (values = []) => {
   const mean = values.reduce((sum, v) => sum + v, 0) / count;
 
   if (count < 2) {
-    return { count, mean: Number(mean.toFixed(2)), stdDev: 0, threshold: Number((mean * 2.5).toFixed(2)) };
+    return {
+      count,
+      mean: Number(mean.toFixed(2)),
+      stdDev: 0,
+      threshold: Number((mean * ANOMALY_SPIKE_SINGLE_ITEM_MULTIPLIER).toFixed(2)),
+    };
   }
 
   const variance =
     values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (count - 1);
   const stdDev = Math.sqrt(variance);
 
-  // Spike threshold: mean + (2 * stdDev)
-  const threshold = mean + 2 * stdDev;
+  // Spike threshold: mean + (ANOMALY_SPIKE_STD_DEV_MULTIPLIER * stdDev)
+  const threshold = mean + ANOMALY_SPIKE_STD_DEV_MULTIPLIER * stdDev;
 
   return {
     count,
@@ -226,9 +223,7 @@ export const detectAnomalies = (transactions = []) => {
         percentageOverAverage: pctOverAvg,
         averageCategoryAmount: baselineStats.mean,
         threshold: baselineStats.threshold,
-        message: `🚨 Unusual Spike: ₹${tx.amount.toLocaleString(
-          "en-IN"
-        )} spent on ${tx.category} (${pctOverAvg}% higher than your average).`,
+        message: `🚨 Unusual Spike: ${formatCurrency(tx.amount)} spent on ${tx.category} (${pctOverAvg}% higher than your average).`,
         transaction: tx,
         timestamp: tx.timestamp,
         isDismissed: dismissedSet.has(anomalyId),
@@ -278,7 +273,7 @@ export const detectAnomalies = (transactions = []) => {
                 amount: t1.amount,
                 date: t1.dateStr,
                 hoursDiff,
-                message: `🔁 Possible Duplicate Charge: ₹${t1.amount.toLocaleString("en-IN")} debited twice by ${merchantName} within ${hoursDiff} hours.`,
+                message: `🔁 Possible Duplicate Charge: ${formatCurrency(t1.amount)} debited twice by ${merchantName} within ${hoursDiff} hours.`,
                 transaction: t1,
                 relatedTransaction: t2,
                 timestamp: Math.max(t1.timestamp, t2.timestamp),
@@ -326,7 +321,7 @@ export const detectAnomalies = (transactions = []) => {
             amount: b.amount,
             date: b.dateStr,
             daysApart,
-            message: `📅 Recurring Subscription: ₹${b.amount.toLocaleString("en-IN")} billed monthly for ${merchantName}.`,
+            message: `📅 Recurring Subscription: ${formatCurrency(b.amount)} billed monthly for ${merchantName}.`,
             transaction: b,
             relatedTransaction: a,
             timestamp: b.timestamp,

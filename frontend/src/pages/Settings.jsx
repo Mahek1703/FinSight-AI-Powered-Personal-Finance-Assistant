@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   FaBell,
   FaChevronRight,
@@ -18,12 +17,13 @@ import {
   FaDatabase,
 } from "react-icons/fa";
 
-const KEY = "finsightCommandSettings";
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "../config/constants.js";
+import { subscribeSettings, saveSettings } from "../services/firestore.js";
 
 const defaults = {
   name: "FinSight User",
   email: "user@finsight.ai",
-  currency: "INR (₹)",
+  currency: DEFAULT_CURRENCY,
   dateFormat: "DD/MM/YYYY",
   weekStart: "Monday",
   transactionAlerts: true,
@@ -32,53 +32,55 @@ const defaults = {
   aiInsights: true,
 };
 
-function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {}, showToast = () => {} }) {
-  const navigate = useNavigate();
-  const [settings, setSettings] = useState(() => {
-    try {
-      return { ...defaults, ...JSON.parse(localStorage.getItem(KEY)) };
-    } catch {
-      return defaults;
-    }
-  });
+function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {}, showToast = () => {}, csvData = [] }) {
+  const [settings, setSettings] = useState(defaults);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(settings));
-    } catch (e) {
-      console.warn("Storage error:", e);
-    }
-  }, [settings]);
+    if (!currentUser?.uid) return;
+    const unsub = subscribeSettings(currentUser.uid, (pref) => {
+      if (pref) {
+        setSettings((prev) => ({ ...prev, ...pref }));
+      }
+    });
+    return unsub;
+  }, [currentUser]);
 
-  const update = (key, value) => {
+  const update = async (key, value) => {
+    const prevVal = settings[key];
     setSettings((prev) => ({ ...prev, [key]: value }));
+    if (currentUser?.uid) {
+      try {
+        await saveSettings({ [key]: value }, currentUser.uid);
+      } catch (err) {
+        setSettings((prev) => ({ ...prev, [key]: prevVal }));
+        showToast(`Failed to update ${key}: ${err.message || "Network error"}`, "error");
+        return false;
+      }
+    }
+    return true;
   };
 
-  const toggle = (key) => {
-    update(key, !settings[key]);
-    showToast(`${key} updated!`, "success");
+  const toggle = async (key) => {
+    const success = await update(key, !settings[key]);
+    if (success) {
+      showToast(`${key} updated!`, "success");
+    }
   };
 
   const handleClearCache = () => {
-    if (window.confirm("Clear offline cached data? Your cloud records in Firestore remain safe.")) {
-      Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith("finsight_") || k.startsWith("finsightCommandSettings")) {
-          localStorage.removeItem(k);
-        }
-      });
+    if (window.confirm("Clear offline cached application state? Your cloud records in Firestore remain safe.")) {
+      try {
+        sessionStorage.clear();
+      } catch {
+        // ignore
+      }
       showToast("Offline cache cleared successfully.", "info");
       setTimeout(() => window.location.reload(), 800);
     }
   };
 
   const handleExportData = () => {
-    const userTxKey = currentUser?.uid
-      ? `finsight_local_transactions_${currentUser.uid}`
-      : "finsight_local_transactions";
-    const rawData =
-      localStorage.getItem(userTxKey) ||
-      localStorage.getItem("finsight_local_transactions") ||
-      "[]";
+    const rawData = JSON.stringify(csvData, null, 2);
     const blob = new Blob([rawData], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -167,10 +169,11 @@ function Settings({ currentUser, themeMode = "dark", toggleThemeMode = () => {},
                 onChange={(e) => update("currency", e.target.value)}
                 className="w-full bg-[#0c0c10] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
               >
-                <option value="INR (₹)">INR (₹ - Indian Rupee)</option>
-                <option value="USD ($)">USD ($ - US Dollar)</option>
-                <option value="EUR (€)">EUR (€ - Euro)</option>
-                <option value="GBP (£)">GBP (£ - British Pound)</option>
+                {SUPPORTED_CURRENCIES.map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

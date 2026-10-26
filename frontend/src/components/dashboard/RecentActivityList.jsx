@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { formatCurrency, formatDate } from "../../config/constants";
 import {
   FaUtensils,
   FaShoppingBag,
@@ -95,13 +96,6 @@ const getCategoryIconSquircle = (category = "") => {
     return "bg-teal-500/10 border-teal-500/20 text-teal-500";
   }
   return "bg-[#14141a] border-white/[0.06] text-zinc-500";
-};
-
-const formatDate = (val) => {
-  if (!val) return "-";
-  const d = new Date(val);
-  if (isNaN(d.getTime())) return val;
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 };
 
 export default function RecentActivityList({
@@ -239,7 +233,7 @@ export default function RecentActivityList({
                         isIncome ? "text-emerald-400" : "text-zinc-200"
                       }`}
                     >
-                      {isIncome ? "+" : "-"} ₹{amount.toLocaleString("en-IN")}
+                      {isIncome ? "+" : "-"} {formatCurrency(amount)}
                     </div>
                   </div>
 

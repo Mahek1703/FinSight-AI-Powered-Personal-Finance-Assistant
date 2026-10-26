@@ -1,14 +1,10 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_URL = `${API_BASE_URL}/api/ai`;
-import { scanReceiptWithGemini } from "./geminiVision.service";
+import { apiFetch } from "./apiClient.js";
+import { scanReceiptWithGemini } from "./geminiVision.service.js";
 
 export const askAI = async (prompt) => {
   try {
-    const response = await fetch(API_URL, {
+    const response = await apiFetch("/api/ai", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         prompt,
       }),
@@ -31,4 +27,4 @@ export const scanReceiptWithAI = async (imageFile) => {
   return scanReceiptWithGemini(imageFile);
 };
 
-export { scanReceiptWithGemini };
+export { scanReceiptWithGemini };

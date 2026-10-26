@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    match /users/{userId} {
+      // User root doc cannot be accessed without ownership
+      allow read, write: if isOwner(userId);
+
+      // 1. Expenses: users/{userId}/expenses/{docId}
+      match /expenses/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.amount is number
+          && request.resource.data.amount >= 0
+          && (!('category' in request.resource.data) || isValidString(request.resource.data.category, 1, 100))
+          && (!('note' in request.resource.data) || isValidString(request.resource.data.note, 0, 1000))
+          && (!('accountType' in request.resource.data) || isValidString(request.resource.data.accountType, 1, 100));
+      }
+
+      // 2. Income: users/{userId}/income/{docId}
+      match /income/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.amount is number
+          && request.resource.data.amount >= 0
+          && (!('category' in request.resource.data) || isValidString(request.resource.data.category, 1, 100))
+          && (!('source' in request.resource.data) || isValidString(request.resource.data.source, 0, 100))
+          && (!('note' in request.resource.data) || isValidString(request.resource.data.note, 0, 1000))
+          && (!('accountType' in request.resource.data) || isValidString(request.resource.data.accountType, 1, 100));
+      }
+
+      // 3. Accounts: users/{userId}/accounts/{docId}
+      match /accounts/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && (!('initialBalance' in request.resource.data) || request.resource.data.initialBalance is number)
+          && (!('balance' in request.resource.data) || request.resource.data.balance is number)
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 1, 100));
+      }
+
+      // 4. Budgets: users/{userId}/budgets/{docId}
+      match /budgets/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && (!('limit' in request.resource.data) || (request.resource.data.limit is number && request.resource.data.limit >= 0))
+          && (!('category' in request.resource.data) || isValidString(request.resource.data.category, 1, 100));
+      }
+
+      // 5. Goals: users/{userId}/goals/{docId}
+      match /goals/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && (!('targetAmount' in request.resource.data) || (request.resource.data.targetAmount is number && request.resource.data.targetAmount >= 0))
+          && (!('currentAmount' in request.resource.data) || (request.resource.data.currentAmount is number && request.resource.data.currentAmount >= 0))
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 1, 200));
+      }
+
+      // 6. Bills: users/{userId}/bills/{docId}
+      match /bills/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && (!('amount' in request.resource.data) || (request.resource.data.amount is number && request.resource.data.amount >= 0))
+          && (!('name' in request.resource.data) || isValidString(request.resource.data.name, 1, 200));
+      }
+
+      // 7. Settings: users/{userId}/settings/{docId}
+      match /settings/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Explicitly deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

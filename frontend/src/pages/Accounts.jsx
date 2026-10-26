@@ -20,75 +20,74 @@ import {
   FaSearch,
   FaCalendarAlt,
   FaReceipt,
+  FaSpinner,
 } from "react-icons/fa";
 
-const defaultAccounts = [
-  {
-    id: "acc_cash",
-    name: "Cash",
-    type: "Cash",
-    iconType: "cash",
-    initialBalance: 0,
-    color: "emerald",
-  },
-  {
-    id: "acc_savings",
-    name: "Savings",
-    type: "Savings",
-    iconType: "savings",
-    initialBalance: 0,
-    color: "rose",
-  },
-  {
-    id: "acc_online",
-    name: "Online",
-    type: "Online",
-    iconType: "online",
-    initialBalance: 0,
-    color: "sky",
-  },
-];
+import {
+  DEFAULT_ACCOUNTS,
+  formatCurrency,
+} from "../config/constants.js";
+import {
+  subscribeAccounts,
+  saveAccount,
+  deleteAccount,
+} from "../services/firestore.js";
+import AddAccountModal from "../components/accounts/AddAccountModal";
+import TransferFundsModal from "../components/accounts/TransferFundsModal";
+import AccountTransactionsDrawer from "../components/accounts/AccountTransactionsDrawer";
 
 export default function Accounts({
   csvData = [],
-  totalBalance = 0,
+  loadingData = false,
   totalIncome = 0,
   totalExpense = 0,
   onSaveTransaction = async () => true,
-  onDeleteTransaction = async () => true,
   showToast = () => {},
 }) {
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
-
-  const [accounts, setAccounts] = useState(() => {
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      try {
-        const saved = localStorage.getItem(`finsight_user_accounts_${uid}`);
-        if (saved) return JSON.parse(saved);
-      } catch (e) {
-        console.warn("Could not parse accounts from localStorage", e);
-      }
-    }
-    return defaultAccounts;
-  });
+  const [accounts, setAccounts] = useState([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  const [isExecutingTransfer, setIsExecutingTransfer] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      if (user?.uid) {
-        try {
-          const saved = localStorage.getItem(`finsight_user_accounts_${user.uid}`);
-          setAccounts(saved ? JSON.parse(saved) : defaultAccounts);
-        } catch {
-          setAccounts(defaultAccounts);
-        }
-      } else {
-        setAccounts(defaultAccounts);
-      }
     });
-    return unsub;
+    return unsubAuth;
   }, []);
+
+  const [prevUid, setPrevUid] = useState(currentUser?.uid);
+  if (prevUid !== currentUser?.uid) {
+    setPrevUid(currentUser?.uid);
+    if (!currentUser?.uid) {
+      setAccounts([]);
+      setIsLoadingAccounts(false);
+    } else {
+      setIsLoadingAccounts(true);
+    }
+  }
+
+  // Real-time Firestore subscription for accounts
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const unsubAccounts = subscribeAccounts(
+      currentUser.uid,
+      (data) => {
+        setAccounts(data || []);
+        setIsLoadingAccounts(false);
+      },
+      (err) => {
+        console.error("Accounts subscription error:", err);
+        setIsLoadingAccounts(false);
+      }
+    );
+
+    return () => {
+      if (typeof unsubAccounts === "function") unsubAccounts();
+    };
+  }, [currentUser?.uid]);
 
   // Modals state
   const [addAccountModal, setAddAccountModal] = useState(false);
@@ -114,17 +113,6 @@ export default function Accounts({
 
   // Search filter inside transactions drawer
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Sync accounts to user-scoped localStorage
-  useEffect(() => {
-    if (currentUser?.uid) {
-      try {
-        localStorage.setItem(`finsight_user_accounts_${currentUser.uid}`, JSON.stringify(accounts));
-      } catch (err) {
-        console.warn("Failed to persist accounts:", err);
-      }
-    }
-  }, [accounts, currentUser]);
 
   // Compute live real-time balances for each account from transaction stream
   const accountBalances = useMemo(() => {
@@ -215,46 +203,66 @@ export default function Accounts({
   };
 
   // Save Add / Edit Account
-  const handleSaveAccount = (e) => {
+  const handleSaveAccount = async (e) => {
     e.preventDefault();
     if (!accName.trim()) {
       showToast("Account name cannot be blank.", "error");
       return;
     }
 
-    if (editingAccount) {
-      setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === editingAccount.id
-            ? {
-                ...a,
-                name: accName.trim(),
-                type: accType,
-                iconType: accIcon,
-                initialBalance: Number(accInitialBalance) || 0,
-              }
-            : a
-        )
-      );
-      showToast(`Account "${accName}" updated.`, "success");
-    } else {
-      const newAcc = {
-        id: `acc_${Date.now()}`,
-        name: accName.trim(),
-        type: accType,
-        iconType: accIcon,
-        initialBalance: Number(accInitialBalance) || 0,
-        color: accIcon === "cash" ? "emerald" : accIcon === "savings" ? "rose" : "sky",
-      };
-      setAccounts((prev) => [...prev, newAcc]);
-      showToast(`Account "${accName}" added.`, "success");
-    }
+    setIsSavingAccount(true);
+    try {
+      if (editingAccount) {
+        const res = await saveAccount(
+          {
+            id: editingAccount.id,
+            firestoreId: editingAccount.id,
+            name: accName.trim(),
+            type: accType,
+            iconType: accIcon,
+            initialBalance: Number(accInitialBalance) || 0,
+            color: editingAccount.color || "emerald",
+          },
+          currentUser?.uid
+        );
 
-    setAddAccountModal(false);
+        if (res.success) {
+          showToast(`Account "${accName}" updated.`, "success");
+          setAddAccountModal(false);
+        } else {
+          showToast(`Failed to update account: ${res.error}`, "error");
+        }
+      } else {
+        const res = await saveAccount(
+          {
+            name: accName.trim(),
+            type: accType,
+            iconType: accIcon,
+            initialBalance: Number(accInitialBalance) || 0,
+            color:
+              accIcon === "cash"
+                ? "emerald"
+                : accIcon === "savings"
+                ? "rose"
+                : "sky",
+          },
+          currentUser?.uid
+        );
+
+        if (res.success) {
+          showToast(`Account "${accName}" added.`, "success");
+          setAddAccountModal(false);
+        } else {
+          showToast(`Failed to add account: ${res.error}`, "error");
+        }
+      }
+    } finally {
+      setIsSavingAccount(false);
+    }
   };
 
   // Delete Account
-  const handleDeleteAccount = (id) => {
+  const handleDeleteAccount = async (id) => {
     const acc = accounts.find((a) => a.id === id);
     if (!acc) return;
     if (accounts.length <= 1) {
@@ -263,10 +271,14 @@ export default function Accounts({
     }
 
     if (window.confirm(`Are you sure you want to delete "${acc.name}"?`)) {
-      setAccounts((prev) => prev.filter((a) => a.id !== id));
-      setActiveMenuId(null);
-      if (selectedAccountForTx?.id === id) setSelectedAccountForTx(null);
-      showToast(`Account "${acc.name}" removed.`, "success");
+      const res = await deleteAccount(id, currentUser?.uid);
+      if (res.success) {
+        setActiveMenuId(null);
+        if (selectedAccountForTx?.id === id) setSelectedAccountForTx(null);
+        showToast(`Account "${acc.name}" removed.`, "success");
+      } else {
+        showToast(`Failed to delete account: ${res.error}`, "error");
+      }
     }
   };
 
@@ -300,6 +312,7 @@ export default function Accounts({
       return;
     }
 
+    setIsExecutingTransfer(true);
     try {
       // 1. Deduct from source account
       await onSaveTransaction({
@@ -321,10 +334,12 @@ export default function Accounts({
         date: transferDate,
       });
 
-      showToast(`Transferred ₹${amt.toLocaleString("en-IN")} from ${transferFrom} to ${transferTo}`, "success");
+      showToast(`Transferred ${formatCurrency(amt)} from ${transferFrom} to ${transferTo}`, "success");
       setTransferModal(false);
     } catch (err) {
       showToast("Transfer failed: " + err.message, "error");
+    } finally {
+      setIsExecutingTransfer(false);
     }
   };
 
@@ -414,7 +429,7 @@ export default function Accounts({
 
         {/* All Accounts Net Balance */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-          All Accounts ₹{grandTotalBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          All Accounts {formatCurrency(grandTotalBalance)}
         </h1>
 
         {/* EXPENSE SO FAR / INCOME SO FAR METRICS */}
@@ -424,7 +439,7 @@ export default function Accounts({
               EXPENSE SO FAR
             </span>
             <span className="text-base sm:text-lg font-extrabold text-rose-400 block">
-              ₹{totalExpense.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(totalExpense)}
             </span>
           </div>
 
@@ -435,7 +450,7 @@ export default function Accounts({
               INCOME SO FAR
             </span>
             <span className="text-base sm:text-lg font-extrabold text-emerald-400 block">
-              ₹{totalIncome.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(totalIncome)}
             </span>
           </div>
         </div>
@@ -461,9 +476,19 @@ export default function Accounts({
 
         {/* Account Cards Feed */}
         <div className="space-y-3">
-          {accounts.map((acc) => {
-            const balInfo = accountBalances[acc.id] || { currentBalance: 0, income: 0, expense: 0, txCount: 0 };
-            const isMenuOpen = activeMenuId === acc.id;
+          {isLoadingAccounts || loadingData ? (
+            <div className="p-12 text-center text-zinc-500 text-xs flex items-center justify-center gap-2 bg-[#08080b] rounded-2xl border border-white/[0.04]">
+              <FaSpinner className="animate-spin text-emerald-400 text-sm" />
+              <span>Loading your accounts...</span>
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="p-12 text-center text-zinc-500 text-xs bg-[#08080b] rounded-2xl border border-white/[0.04]">
+              No accounts created yet. Click "Create New Account" below to initialize one.
+            </div>
+          ) : (
+            accounts.map((acc) => {
+              const balInfo = accountBalances[acc.id] || { currentBalance: 0, income: 0, expense: 0, txCount: 0 };
+              const isMenuOpen = activeMenuId === acc.id;
 
             return (
               <div
@@ -489,12 +514,12 @@ export default function Accounts({
                     <div className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                       <span className="text-zinc-400 font-normal">Balance:</span>
                       <span className={balInfo.currentBalance < 0 ? "text-rose-400" : "text-emerald-400"}>
-                        ₹{balInfo.currentBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatCurrency(balInfo.currentBalance)}
                       </span>
                     </div>
 
                     <p className="text-[10px] text-zinc-500 hidden sm:block">
-                      {balInfo.txCount} entries · +₹{balInfo.income.toLocaleString("en-IN")} in / -₹{balInfo.expense.toLocaleString("en-IN")} out
+                      {balInfo.txCount} entries · +{formatCurrency(balInfo.income)} in / -{formatCurrency(balInfo.expense)} out
                     </p>
                   </div>
                 </div>
@@ -560,7 +585,8 @@ export default function Accounts({
                 </div>
               </div>
             );
-          })}
+          })
+        )}
         </div>
 
         {/* [+ ADD NEW ACCOUNT] Outline Action Button (Exact Reference Design) */}
@@ -576,330 +602,52 @@ export default function Accounts({
         </button>
       </div>
 
-      {/* ==========================================================================
-          Account Transaction Ledger Drawer / Feed
-          ========================================================================== */}
-      {selectedAccountForTx && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setSelectedAccountForTx(null)}
-        >
-          <div
-            className="bg-[#0c0c10] border border-white/[0.08] rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-3">
-                {renderAccountIcon(selectedAccountForTx)}
-                <div>
-                  <h3 className="text-base font-extrabold text-white capitalize">
-                    {selectedAccountForTx.name} Transactions
-                  </h3>
-                  <p className="text-xs text-emerald-400 font-bold">
-                    Current Balance: ₹
-                    {(
-                      accountBalances[selectedAccountForTx.id]?.currentBalance || 0
-                    ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
+      {/* Account Transactions Ledger Drawer */}
+      <AccountTransactionsDrawer
+        selectedAccount={selectedAccountForTx}
+        onClose={() => setSelectedAccountForTx(null)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        accountTransactions={accountTransactions}
+        accountBalance={accountBalances[selectedAccountForTx?.id]?.currentBalance || 0}
+        renderIcon={renderAccountIcon}
+      />
 
-              <button
-                type="button"
-                onClick={() => setSelectedAccountForTx(null)}
-                className="p-2 text-zinc-400 hover:text-white bg-transparent border-none cursor-pointer"
-              >
-                <FaTimes />
-              </button>
-            </div>
+      {/* Add / Edit Account Modal */}
+      <AddAccountModal
+        isOpen={addAccountModal}
+        onClose={() => setAddAccountModal(false)}
+        editingAccount={editingAccount}
+        accName={accName}
+        setAccName={setAccName}
+        accType={accType}
+        setAccType={setAccType}
+        accIcon={accIcon}
+        setAccIcon={setAccIcon}
+        accInitialBalance={accInitialBalance}
+        setAccInitialBalance={setAccInitialBalance}
+        onSave={handleSaveAccount}
+        isSavingAccount={isSavingAccount}
+      />
 
-            {/* Search Box */}
-            <div className="relative">
-              <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs" />
-              <input
-                type="text"
-                placeholder="Search category, note or amount in this account..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-              />
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {accountTransactions.length === 0 ? (
-                <div className="text-center py-10 text-zinc-500 text-xs">
-                  No transactions recorded for this account yet.
-                </div>
-              ) : (
-                accountTransactions.map((tx, idx) => {
-                  const rawType = String(tx.Type || tx.type || "").toLowerCase();
-                  const isIncome = rawType === "income";
-                  const amt = Math.abs(
-                    Number(String(tx.Amount || tx.amount || 0).replace(/[+,]/g, "")) || 0
-                  );
-
-                  return (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-xl bg-[#14141a] border border-white/[0.04] flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${
-                            isIncome
-                              ? "bg-emerald-500/10 text-emerald-400"
-                              : "bg-rose-500/10 text-rose-400"
-                          }`}
-                        >
-                          {isIncome ? <FaArrowUp /> : <FaArrowDown />}
-                        </div>
-                        <div>
-                          <strong className="text-white block font-semibold">
-                            {tx.Category || tx.category || "General"}
-                          </strong>
-                          <span className="text-[10px] text-zinc-400">
-                            {tx.Date || tx.date || "Recent"} {tx.Note || tx.note ? `· ${tx.Note || tx.note}` : ""}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`font-extrabold text-sm ${
-                          isIncome ? "text-emerald-400" : "text-zinc-200"
-                        }`}
-                      >
-                        {isIncome ? "+" : "-"} ₹{amt.toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==========================================================================
-          Add / Edit Account Modal
-          ========================================================================== */}
-      {addAccountModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setAddAccountModal(false)}
-        >
-          <div
-            className="bg-[#0c0c10] border border-white/[0.08] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FaWallet className="text-emerald-400" />
-                <span>{editingAccount ? "Edit Account" : "Add New Account / Wallet"}</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setAddAccountModal(false)}
-                className="p-1 text-zinc-500 hover:text-zinc-300 bg-transparent border-none cursor-pointer"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveAccount} className="space-y-3.5">
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Account Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. HDFC Salary, PayTM Wallet, Emergency Fund"
-                  value={accName}
-                  onChange={(e) => setAccName(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Account Category
-                  </label>
-                  <select
-                    value={accType}
-                    onChange={(e) => setAccType(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank Account</option>
-                    <option value="Card">Credit/Debit Card</option>
-                    <option value="Online">Online / UPI</option>
-                    <option value="Savings">Savings Vault</option>
-                    <option value="Investment">Investment</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    Visual Icon
-                  </label>
-                  <select
-                    value={accIcon}
-                    onChange={(e) => setAccIcon(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    <option value="cash">💵 Cash Note</option>
-                    <option value="savings">🐷 Piggy Bank</option>
-                    <option value="card">💳 Credit/Debit Card</option>
-                    <option value="bank">🏦 Bank Institution</option>
-                    <option value="wallet">👛 Digital Wallet</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Initial Starting Balance (₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={accInitialBalance}
-                  onChange={(e) => setAccInitialBalance(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
-              >
-                <FaCheck className="text-emerald-400" />
-                <span>{editingAccount ? "Update Account" : "Create Account"}</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==========================================================================
-          Inter-Account Transfer Funds Modal
-          ========================================================================== */}
-      {transferModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setTransferModal(false)}
-        >
-          <div
-            className="bg-[#0c0c10] border border-white/[0.08] rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FaExchangeAlt className="text-sky-400" />
-                <span>Transfer Money Between Accounts</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setTransferModal(false)}
-                className="p-1 text-zinc-500 hover:text-zinc-300 bg-transparent border-none cursor-pointer"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <form onSubmit={handleExecuteTransfer} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    From Account
-                  </label>
-                  <select
-                    value={transferFrom}
-                    onChange={(e) => setTransferFrom(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.name}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                    To Account
-                  </label>
-                  <select
-                    value={transferTo}
-                    onChange={(e) => setTransferTo(e.target.value)}
-                    className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.name}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Transfer Amount (₹)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  step="any"
-                  placeholder="e.g. 5000"
-                  value={transferAmount}
-                  onChange={(e) => setTransferAmount(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Transfer Date
-                </label>
-                <input
-                  type="date"
-                  value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-zinc-400 font-medium block mb-1">
-                  Reason / Description
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. ATM withdrawal, Card settlement"
-                  value={transferNote}
-                  onChange={(e) => setTransferNote(e.target.value)}
-                  className="w-full bg-[#14141a] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-500 transition-all active:scale-[0.98]"
-              >
-                <FaCheck className="text-emerald-400" />
-                <span>Confirm Transfer</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Inter-Account Transfer Funds Modal */}
+      <TransferFundsModal
+        isOpen={transferModal}
+        onClose={() => setTransferModal(false)}
+        accounts={accounts}
+        transferFrom={transferFrom}
+        setTransferFrom={setTransferFrom}
+        transferTo={transferTo}
+        setTransferTo={setTransferTo}
+        transferAmount={transferAmount}
+        setTransferAmount={setTransferAmount}
+        transferDate={transferDate}
+        setTransferDate={setTransferDate}
+        transferNote={transferNote}
+        setTransferNote={setTransferNote}
+        onExecute={handleExecuteTransfer}
+        isExecutingTransfer={isExecutingTransfer}
+      />
     </div>
   );
 }

@@ -26,16 +26,7 @@ import {
 import { scanReceiptWithGemini } from "../services/geminiVision.service";
 import { addExpense } from "../services/firestore";
 import { auth } from "../firebase";
-
-const EXPENSE_CATEGORIES = [
-  "Food",
-  "Bills",
-  "Shopping",
-  "Travel",
-  "Health",
-  "Education",
-  "Others",
-];
+import { EXPENSE_CATEGORIES, formatCurrency, getCurrencySymbol } from "../config/constants";
 
 const PAYMENT_TYPES = ["Credit", "Debit", "Cash", "Online"];
 
@@ -74,7 +65,6 @@ export default function ReceiptScanner({
   const [isDragging, setIsDragging] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanStep, setScanStep] = useState("");
-  const [parsedData, setParsedData] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -95,7 +85,6 @@ export default function ReceiptScanner({
   const handleReset = useCallback(() => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    setParsedData(null);
     setErrorMessage("");
     setIsScanning(false);
     setScanStep("");
@@ -110,8 +99,39 @@ export default function ReceiptScanner({
     onClose();
   };
 
+  const startScan = useCallback(async (file) => {
+    setIsScanning(true);
+    setScanStep("Extracting image data...");
+
+    try {
+      setScanStep("Analyzing receipt with AI...");
+      const result = await scanReceiptWithGemini(file);
+
+      setScanStep("Extracting merchant & line items...");
+
+      // Populate review form state
+      setFormData({
+        merchant: result.merchant || "Store Merchant",
+        date: result.date || new Date().toISOString().slice(0, 10),
+        totalAmount: result.totalAmount ? String(result.totalAmount) : "0",
+        category: result.category || "Food",
+        description: result.description || `${result.merchant || "Receipt"} expense`,
+        paymentType: result.paymentType || "Cash",
+      });
+
+      setIsScanning(false);
+      setShowReviewModal(true);
+      showToast("Receipt parsed successfully with AI!", "success");
+    } catch (err) {
+      console.error("Receipt Scan Error:", err);
+      setIsScanning(false);
+      setErrorMessage(err.message || "Failed to parse receipt with AI Vision service.");
+      showToast("OCR scanning error: " + (err.message || "Failed to process image"), "error");
+    }
+  }, [showToast]);
+
   // Process selected file
-  const processImageFile = async (file) => {
+  const processImageFile = useCallback(async (file) => {
     if (!file) return;
 
     if (!file.type.match(/^image\/(png|jpe?g|webp)$/i)) {
@@ -133,41 +153,9 @@ export default function ReceiptScanner({
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
 
-    // Trigger Gemini Vision API scan
+    // Trigger AI Vision scan
     await startScan(file);
-  };
-
-  const startScan = async (file) => {
-    setIsScanning(true);
-    setScanStep("Extracting image base64...");
-
-    try {
-      setScanStep("Sending to Google Gemini 1.5 Flash Vision...");
-      const result = await scanReceiptWithGemini(file);
-
-      setScanStep("Extracting merchant & line items...");
-      setParsedData(result);
-
-      // Populate review form state
-      setFormData({
-        merchant: result.merchant || "Store Merchant",
-        date: result.date || new Date().toISOString().slice(0, 10),
-        totalAmount: result.totalAmount ? String(result.totalAmount) : "0",
-        category: result.category || "Food",
-        description: result.description || `${result.merchant || "Receipt"} expense`,
-        paymentType: result.paymentType || "Cash",
-      });
-
-      setIsScanning(false);
-      setShowReviewModal(true);
-      showToast("Receipt parsed successfully with Gemini AI!", "success");
-    } catch (err) {
-      console.error("Receipt Scan Error:", err);
-      setIsScanning(false);
-      setErrorMessage(err.message || "Failed to parse receipt with Gemini Vision API.");
-      showToast("OCR scanning error: " + (err.message || "Failed to process image"), "error");
-    }
-  };
+  }, [showToast, startScan]);
 
   // Drag & Drop Handlers
   const handleDragOver = (e) => {
@@ -214,7 +202,7 @@ export default function ReceiptScanner({
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [isOpen, embedded, isScanning, showReviewModal]);
+  }, [isOpen, embedded, isScanning, showReviewModal, processImageFile]);
 
   // Form Submission & Database Persistence
   const handleConfirmAddExpense = async (e) => {
@@ -247,7 +235,7 @@ export default function ReceiptScanner({
       const res = await addExpense(expensePayload, uid);
 
       if (res.success) {
-        showToast(`Added ₹${amountNum.toFixed(2)} expense for ${formData.merchant || "Receipt"}!`, "success");
+        showToast(`Added ${formatCurrency(amountNum)} expense for ${formData.merchant || "Receipt"}!`, "success");
 
         const fullRecord = {
           ...res.payload,
@@ -495,7 +483,7 @@ export default function ReceiptScanner({
                     {formData.merchant || "Extracted Receipt"}
                   </p>
                   <p className="text-[11px] text-emerald-400 font-medium">
-                    Total: ₹{formData.totalAmount || "0.00"}
+                    Total: {formatCurrency(formData.totalAmount || 0)}
                   </p>
                 </div>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold px-2 py-1 bg-zinc-800 rounded">
@@ -524,11 +512,11 @@ export default function ReceiptScanner({
               {/* Total Amount */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                  <FaMoneyBillWave className="text-emerald-400 text-xs" /> Total Amount (₹)
+                  <FaMoneyBillWave className="text-emerald-400 text-xs" /> Total Amount ({getCurrencySymbol()})
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 font-bold text-xs">
-                    ₹
+                    {getCurrencySymbol()}
                   </span>
                   <input
                     type="number"

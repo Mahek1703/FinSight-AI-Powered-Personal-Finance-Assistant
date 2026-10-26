@@ -8,6 +8,7 @@ import {
   FaBullseye,
   FaSyncAlt,
 } from "react-icons/fa";
+import { subscribeSettings, saveSettings } from "../../services/firestore.js";
 
 export default function BeginnerOnboarding({
   userId = null,
@@ -18,15 +19,17 @@ export default function BeginnerOnboarding({
   onOpenAddBudget = () => {},
   onOpenSyncTab = () => {},
 }) {
-  const storageKey = userId ? `finsight_hide_onboarding_${userId}` : "finsight_hide_onboarding";
-
-  const [dismissed, setDismissed] = useState(() => {
-    return localStorage.getItem(storageKey) === "true";
-  });
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    setDismissed(localStorage.getItem(storageKey) === "true");
-  }, [storageKey]);
+    if (!userId) return;
+    const unsub = subscribeSettings(userId, (pref) => {
+      if (pref?.onboardingDismissed) {
+        setDismissed(true);
+      }
+    });
+    return unsub;
+  }, [userId]);
 
   if (dismissed) return null;
 
@@ -60,9 +63,11 @@ export default function BeginnerOnboarding({
   const completedCount = steps.filter((s) => s.done).length;
   const allDone = completedCount === steps.length;
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
     setDismissed(true);
-    localStorage.setItem(storageKey, "true");
+    if (userId) {
+      await saveSettings({ onboardingDismissed: true }, userId);
+    }
   };
 
   if (allDone) return null;

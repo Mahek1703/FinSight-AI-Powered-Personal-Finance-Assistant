@@ -28,6 +28,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { generateCashFlowForecast } from "../../utils/ForecastEngine";
+import { formatCurrency, getCurrencySymbol } from "../../config/constants";
 
 /**
  * Custom Recharts Tooltip for Dark & Light Theme Parity
@@ -60,7 +61,7 @@ const CustomForecastTooltip = ({ active, payload, label }) => {
                 {entry.name}:
               </span>
               <span className="font-mono font-bold text-white">
-                ₹{Number(entry.value).toLocaleString("en-IN")}
+                {formatCurrency(Number(entry.value))}
               </span>
             </div>
           );
@@ -77,7 +78,6 @@ const CustomForecastTooltip = ({ active, payload, label }) => {
  */
 export default function CashFlowForecastCard({
   transactions = [],
-  totalBalance = 0,
 }) {
   const [viewMode, setViewMode] = useState("monthly"); // 'monthly' | 'runway'
 
@@ -101,7 +101,6 @@ export default function CashFlowForecastCard({
     isCashCrunch,
     warningDay,
     alertMessage,
-    alertType,
     chartData,
     runwayPoints,
     daySpan = 0,
@@ -270,7 +269,7 @@ export default function CashFlowForecastCard({
               )}
             </div>
             <div className="text-xl sm:text-2xl font-extrabold text-white tracking-tight font-mono">
-              ₹{projectedExpense.toLocaleString("en-IN")}
+              {formatCurrency(projectedExpense)}
             </div>
             <p className="text-[11px] text-zinc-500">
               Weighted moving average projection
@@ -288,12 +287,12 @@ export default function CashFlowForecastCard({
               </span>
             </div>
             <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 tracking-tight font-mono">
-              ₹{projectedIncome.toLocaleString("en-IN")}
+              {formatCurrency(projectedIncome)}
             </div>
             <p className="text-[11px] text-zinc-500">
               Net Flow:{" "}
               <span className={projectedNetSavings >= 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
-                {projectedNetSavings >= 0 ? "+" : ""}₹{projectedNetSavings.toLocaleString("en-IN")}
+                {projectedNetSavings >= 0 ? "+" : ""}{formatCurrency(projectedNetSavings)}
               </span>
             </p>
           </div>
@@ -309,7 +308,7 @@ export default function CashFlowForecastCard({
               </span>
             </div>
             <div className="text-xl sm:text-2xl font-extrabold text-amber-400 tracking-tight font-mono">
-              ₹{dailyBurnRate.toLocaleString("en-IN")}
+              {formatCurrency(dailyBurnRate)}
               <span className="text-xs font-medium text-zinc-500"> /day</span>
             </div>
             <p className="text-[11px] text-zinc-500">
@@ -332,17 +331,17 @@ export default function CashFlowForecastCard({
               <div
                 style={{ width: `${fixedRatio}%` }}
                 className="h-full bg-purple-500 transition-all"
-                title={`Fixed: ₹${fixedExpenseAmount}`}
+                title={`Fixed: ${formatCurrency(fixedExpenseAmount)}`}
               />
               <div
                 style={{ width: `${variableRatio}%` }}
                 className="h-full bg-sky-400 transition-all"
-                title={`Variable: ₹${variableExpenseAmount}`}
+                title={`Variable: ${formatCurrency(variableExpenseAmount)}`}
               />
             </div>
             <div className="flex items-center justify-between text-[10px] text-zinc-400">
-              <span>Fixed: ₹{fixedExpenseAmount.toLocaleString("en-IN")}</span>
-              <span>Var: ₹{variableExpenseAmount.toLocaleString("en-IN")}</span>
+              <span>Fixed: {formatCurrency(fixedExpenseAmount)}</span>
+              <span>Var: {formatCurrency(variableExpenseAmount)}</span>
             </div>
           </div>
         </div>
@@ -392,7 +391,7 @@ export default function CashFlowForecastCard({
                   <YAxis
                     stroke="#52525b"
                     fontSize={10}
-                    tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
+                    tickFormatter={(val) => `${getCurrencySymbol()}${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                     tickLine={false}
                     axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
                   />
@@ -462,7 +461,7 @@ export default function CashFlowForecastCard({
                   <YAxis
                     stroke="#52525b"
                     fontSize={10}
-                    tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
+                    tickFormatter={(val) => `${getCurrencySymbol()}${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                     tickLine={false}
                     axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
                   />

@@ -4,6 +4,8 @@
  * fixed vs variable spending ratios, daily burn rate, and cash crunch runway.
  */
 
+import { FORECAST_WINDOW_DAYS, FORECAST_MAX_MONTHS } from "../config/constants.js";
+
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -28,7 +30,7 @@ const FIXED_CATEGORIES = new Set([
 const toNum = (val) => {
   if (typeof val === "number") return isNaN(val) ? 0 : val;
   if (!val) return 0;
-  const cleaned = String(val).replace(/[₹$€, +]/g, "");
+  const cleaned = String(val).replace(/[\u20B9$€, +]/g, "");
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : Math.abs(num);
 };
@@ -167,7 +169,7 @@ export const generateCashFlowForecast = (transactions = []) => {
     return {
       hasEnoughData: false,
       reason: "No valid transaction values found.",
-      alertMessage: "Log transactions for at least 30 days to unlock AI Predictive Forecasting.",
+      alertMessage: `Log transactions for at least ${FORECAST_WINDOW_DAYS} days to unlock AI Predictive Forecasting.`,
       alertType: "empty",
       projectedExpense: 0,
       projectedIncome: 0,

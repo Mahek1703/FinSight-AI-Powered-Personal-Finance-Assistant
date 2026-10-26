@@ -1,17 +1,13 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_URL = `${API_BASE_URL}/api/gmail`;
+import { apiFetch } from "./apiClient.js";
 
 /**
  * Send the Google OAuth access token to the backend.
- * The backend will use it to access Gmail.
+ * The backend will use it to access Gmail and parse recent transactions.
  */
 export const connectGmail = async (accessToken, userId = null) => {
   try {
-    const response = await fetch(`${API_URL}/connect`, {
+    const response = await apiFetch("/api/gmail/connect", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         accessToken,
         userId,

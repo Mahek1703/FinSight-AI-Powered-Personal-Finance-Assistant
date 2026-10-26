@@ -13,6 +13,7 @@ import {
   FaReceipt,
 } from "react-icons/fa";
 import AnomalyAlertBanner from "./AnomalyAlertBanner";
+import { formatCurrency } from "../../config/constants";
 
 export default function DashboardHero({
   totalBalance = 0,
@@ -30,7 +31,7 @@ export default function DashboardHero({
 
   const formatMoney = (val) => {
     if (hideBalance) return "••••••";
-    return `₹${Number(val || 0).toLocaleString("en-IN")}`;
+    return formatCurrency(Number(val || 0));
   };
 
   const savingsRate =

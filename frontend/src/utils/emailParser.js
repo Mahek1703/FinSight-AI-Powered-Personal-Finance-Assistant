@@ -166,9 +166,9 @@ export const extractAmountFromText = (text) => {
 
   // Prioritized purchase regex patterns
   const patterns = [
-    /(?:order\s*total|grand\s*total|total\s*amount|amount\s*paid|paid|total\s*payable|net\s*amount|total\s*price|invoice\s*amount|debited\s*by|charged)\s*[:\-]?\s*(?:₹|Rs\.?|INR|\$|EUR|GBP)?\s*([\d,]+(?:\.\d{1,2})?)/i,
-    /(?:₹|Rs\.?|INR|\$)\s*([\d,]+(?:\.\d{1,2})?)/i,
-    /([\d,]+(?:\.\d{1,2})?)\s*(?:INR|Rs\.?|₹)/i,
+    /(?:order\s*total|grand\s*total|total\s*amount|amount\s*paid|paid|total\s*payable|net\s*amount|total\s*price|invoice\s*amount|debited\s*by|charged)\s*[:-]?\s*(?:[\u20B9]|Rs\.?|INR|\$|EUR|GBP)?\s*([\d,]+(?:\.\d{1,2})?)/i,
+    /(?:[\u20B9]|Rs\.?|INR|\$)\s*([\d,]+(?:\.\d{1,2})?)/i,
+    /([\d,]+(?:\.\d{1,2})?)\s*(?:INR|Rs\.?|[\u20B9])/i,
   ];
 
   for (const pattern of patterns) {
@@ -232,7 +232,7 @@ export const extractDateFromEmail = (dateHeader, text = "") => {
 
   // Check in-text date patterns (DD/MM/YYYY or YYYY-MM-DD)
   const datePatterns = [
-    /(?:ordered|order|purchase|placed|date|bill\s*date)\s*(?:on|date)?\s*[:\-]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+    /(?:ordered|order|purchase|placed|date|bill\s*date)\s*(?:on|date)?\s*[:-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
     /(\d{4}-\d{2}-\d{2})/,
   ];
 
