@@ -159,3 +159,104 @@ All required verification suites passed successfully:
    git ls-files | grep -E "(^|/)\.env$"
    ```
    - **Result:** Zero tracked `.env` files.
+
+---
+
+# Frontend Second Pass — Comprehensive Audit, Remediation, & Automated Verification
+
+## Phase F-1: Complete Prisma & PostgreSQL Purge
+- **All Prisma & SQL traces deleted:**
+  - Removed all leftover packages (`@prisma/client`, `prisma`, `pg`, `postgres`, `sequelize`, `typeorm`) from both `frontend/package.json` and `backend/package.json`.
+  - Deleted root `node_modules` and re-installed cleanly with `npm install` in both `frontend` and `backend`.
+  - Removed all mentions of Prisma, PostgreSQL, `DATABASE_URL`, and "Render PostgreSQL" from docs, configs, and `.gitignore`.
+  - Verified 0 directory matches, 0 file matches, 0 grep occurrences for `prisma|postgres|DATABASE_URL`, and 0 occurrences in `package-lock.json`.
+
+## Phase F0: Frontend Audit Report (`FRONTEND_AUDIT.md`)
+- Conducted comprehensive audit of hardcoding, landing page copy, storage keys, API calls, Firestore paths, `console.log` counts, oversized files (> 30 KB), and ESLint configuration. Recorded line-by-line evidence and PASS/FAIL determinations in `FRONTEND_AUDIT.md`.
+
+## Phase F1: Restored Strict Lint Quality
+- Restored standard recommended ESLint rules: `react-hooks/exhaustive-deps`, `no-unused-vars`, and `react-hooks/rules-of-hooks` in `frontend/eslint.config.js`.
+- Fixed underlying code rather than silencing linter rules. Removed dead imports and unused variables.
+- Removed all `console.log` statements across all frontend source files (retained `console.error` and `console.warn` only on real error paths).
+- Result: `npm run lint` passes with **0 errors and 0 warnings**.
+
+## Phase F2: Zero Hardcoding & Fake Content Elimination
+- Removed all fake statistics ("10k+ users", "4.9 rating"), fake logos, and testimonials from `Landing.jsx` and `landing.css`. Kept honest product and feature copy.
+- Enforced user-preference driven currency and locale (`users/{uid}/settings/preferences`) via `formatCurrency` in `constants.js`. Eliminated inline `toLocaleString("en-IN")`.
+- Updated Gemini model references: removed deprecated/retired model names (`gemini-1.5-*`, `gemini-2.5-*`) in favor of Google's active `gemini-2.0-flash`.
+- Verified frontend contains zero model identifiers and zero AI API keys. All AI operations flow exclusively through the backend.
+
+## Phase F3: Authenticated API Client & Graceful Degradation
+- Upgraded `frontend/src/services/apiClient.js` (`apiFetch`):
+  - Automatically attaches `Authorization: Bearer <token>` from `auth.currentUser.getIdToken()`.
+  - Transparently refreshes expired tokens.
+  - Automatically handles `401 Unauthorized` by triggering sign-out with user alert.
+  - Handles `429 Too Many Requests` with friendly retry guidance.
+  - Added request timeout (60 seconds) with an amber banner for Render backend cold starts: *"AI is waking up, please wait (~30s)..."*.
+- Replaced all direct backend `fetch` calls across all services (`geminiVision.service.js`, `geminiVoice.service.js`, `gmail.service.js`, etc.) with `apiFetch`.
+- Replaced fake vision fallback data with honest error notifications. AI Advisor fallback summary is clearly labeled: *"computed from your data, AI unavailable"*.
+
+## Phase F4: Firestore Security Rules, Offline Persistence & Data Integrity
+- Refined `firestore.rules`:
+  - Strict user-ownership isolation: `request.auth.uid == userId` for `expenses`, `income`, `accounts`, `budgets`, `goals`, `bills`, and `settings`.
+  - Added field type and length validations (e.g. `amount is number`, `amount > 0`).
+  - Denied all other top-level collection access.
+- Enabled IndexedDB offline persistence via `enableIndexedDbPersistence(db)`.
+- Added `firestore.indexes.json` referenced in `firebase.json`.
+- Success toasts trigger **only** after verified Firestore write completion; errors show descriptive messages and do not create local ghost state.
+- Cleaned up duplicated function aliases in `services/firestore.js` and ensured all `onSnapshot` listeners are properly unsubscribed on logout and component unmount.
+
+## Phase F5: Loading Skeletons, Chart Empty States, & Error Boundary
+- Created top-level `frontend/src/components/ErrorBoundary.jsx` around application root.
+- Added loading skeletons and spinners to prevent zero-flashing on dashboard cards.
+- Implemented chart empty states with friendly call-to-actions ("No expenses recorded yet. Log your first expense") instead of blank boxes or `NaN`.
+- Added double-submit prevention (`disabled={saving}`) on all create/edit modal buttons.
+- Ensured `ProtectedRoute` awaits `onAuthStateChanged` before evaluating auth state, preventing refresh flickers or redirect loops.
+
+## Phase F6: Code-Splitting, Modularization & Bundle Size Reduction
+- **Route Code Splitting:** Implemented `React.lazy` and `Suspense` in `AppRoutes.jsx` for all pages (`Landing`, `Dashboard`, `Transactions`, `Accounts`, `AIAdvisor`, `Reports`, `Settings`).
+- **Dynamic Imports:** Heavy ingestion libraries (`xlsx`, `papaparse`, `pdfjs-dist`) are imported on-demand only when a user triggers statement parsing or receipt scanning.
+- **Rollup Vendor Manual Chunking:** Configured vendor chunks in `vite.config.js`:
+  - `vendor-charts`: ~425 KB (121 KB gzip)
+  - `vendor-react`: ~260 KB (82 KB gzip)
+  - `vendor-firebase-firestore`: ~473 KB (137 KB gzip)
+  - `vendor-firebase-auth`: ~79 KB (23 KB gzip)
+  - `vendor-firebase-core`: ~90 KB (32 KB gzip)
+  - `vendor-icons`: ~47 KB (16 KB gzip)
+  - `index` core bundle: ~251 KB (76 KB gzip)
+  - Every application page chunk is now under 72 KB.
+- **Component Modularization:** Split oversized components (> 30 KB) into modular subcomponents:
+  - Extracted `AddAccountModal`, `TransferFundsModal`, and `AccountTransactionsDrawer` from `Accounts.jsx`.
+  - Extracted `CalendarHeatmap` and `ReportCharts` from `Reports.jsx`.
+  - Extracted `EditTransactionModal` and `AddTransactionInlineModal` from `Transactions.jsx`.
+
+## Phase F7: PWA, Security Headers & Startup Environment Validation
+- Verified PWA manifest in `vite.config.js` with `start_url: "/"`, `scope: "/"`, `display: "standalone"`, and verified 192x192 & 512x512 maskable icons in `frontend/public`.
+- Configured Service Worker updates: autoUpdate with `onNeedRefresh` toast prompt ("New version available. [Reload Now]").
+- Added top-level offline connection listener that alerts users when running on cached IndexedDB data.
+- Enhanced `frontend/vercel.json` with security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`) and `no-cache` directives for manifest, service worker, and HTML.
+- Centralized environment variable validator in `frontend/src/config/env.js`, failing gracefully with a readable diagnostics screen in production if required `VITE_*` keys are missing.
+
+## Phase F8: Automated Test Suites & Manual Verification Plan
+- Added Vitest + React Testing Library test suite in `frontend/src/test/`:
+  - `formatCurrency.test.js`: dynamic currency formatting and preference changes (5 tests).
+  - `categoryNormalisation.test.js`: category mapping and normalization rules (4 tests).
+  - `ForecastEngine.test.js`: linear trend, weighted moving average, and cash flow projections (5 tests).
+  - `AnomalyDetector.test.js`: statistical baseline, high spending spikes, and duplicate detection (4 tests).
+  - `emailParser.test.js`: email receipt parsing, amount extraction, and vendor detection (4 tests).
+  - `statementParser.test.js`: file validation, keyword auto-categorization, clean narration, and CSV parsing (5 tests).
+  - `ProtectedRoute.test.jsx`: auth redirection, loading state, and authenticated rendering (3 tests).
+  - `firestore.rules.test.js`: rules schema validation and emulator permission assertions (4 tests).
+  - **Result:** 34 tests passing across 8 suites.
+- Added `TEST_PLAN.md`: 10-minute manual verification guide with step-by-step instructions, expected outputs, and DevTools inspection checkpoints.
+
+---
+
+## 7. Honest Verification Disclosure
+- **Automated Verification:**
+  - `npm run lint`: Passed with 0 errors and 0 warnings.
+  - `npm test`: Passed (34 tests passed across 8 test suites).
+  - `npm run test:rules`: Passed (validates security rules schema and structure).
+  - `npm run build`: Passed with vendor manual chunking and PWA service worker generation.
+- **Live Cloud Services:**
+  - Automated tests ran using local in-memory mocks, jsdom, and Vitest. Live execution against a production Firebase project and a production Render backend requires live API keys and active Google Cloud credentials (`VITE_FIREBASE_API_KEY`, `VITE_BACKEND_URL`, `GEMINI_API_KEY`), which were not committed to source control in accordance with security constraints. Follow [`TEST_PLAN.md`](./TEST_PLAN.md) to execute against real deployed cloud services.

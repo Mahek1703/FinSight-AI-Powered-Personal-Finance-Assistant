@@ -162,6 +162,8 @@ export const cleanNarration = (raw) => {
   return str || "Transaction";
 };
 
+export const cleanMerchantNote = cleanNarration;
+
 /**
  * 5. Auto-Categorization Engine
  * Applies keyword matching:
@@ -316,27 +318,28 @@ export const parseLineToTransaction = (line, fallbackDate = null) => {
   const trimmed = line.trim();
   if (!trimmed || trimmed.length < 2) return null;
 
-  // 1. Extract Amount using regex: captures numbers with optional commas/decimals
-  const amountMatch = trimmed.match(/(?:rs\.?|[\u20B9]|\$)?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i);
-  if (!amountMatch) return null;
-
-  const rawAmtStr = amountMatch[1] || amountMatch[0];
-  const amount = cleanAmount(rawAmtStr);
-  if (amount <= 0) return null;
-
-  // 2. Extract Date (optional)
+  // 1. Extract Date first so numeric parts of dates (like year 2026) are not mistaken for amounts
   const dateRegex = /\b(\d{1,2}[-/.](?:\d{1,2}|[A-Za-z]{3})[-/.]\d{2,4}|\d{4}[-/.](?:\d{1,2}|[A-Za-z]{3})[-/.]\d{1,2})\b/;
   const dateMatch = trimmed.match(dateRegex);
   const finalDate = dateMatch
     ? normalizeDate(dateMatch[0])
     : (fallbackDate || new Date().toISOString().slice(0, 10));
 
-  // 3. Extract Narration string by stripping date and amount from the line
-  let rawNarration = trimmed;
+  let lineWithoutDate = trimmed;
   if (dateMatch) {
-    rawNarration = rawNarration.replace(dateMatch[0], " ");
+    lineWithoutDate = lineWithoutDate.replace(dateMatch[0], " ");
   }
-  rawNarration = rawNarration.replace(amountMatch[0], " ").trim();
+
+  // 2. Extract Amount using regex: captures numbers with optional commas/decimals
+  const amountMatch = lineWithoutDate.match(/(?:rs\.?|[\u20B9]|\$)?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i);
+  if (!amountMatch) return null;
+
+  const rawAmtStr = amountMatch[1] || amountMatch[0];
+  const amount = cleanAmount(rawAmtStr);
+  if (amount <= 0) return null;
+
+  // 3. Extract Narration string by stripping amount from lineWithoutDate
+  let rawNarration = lineWithoutDate.replace(amountMatch[0], " ").trim();
   rawNarration = rawNarration.replace(/^[-,:\s]+|[-,:\s]+$/g, "").trim();
 
   // 4. Set Type: Default to "Expense" unless specified as credit/income
@@ -489,7 +492,6 @@ export const parseCSV = async (file) => {
   const PapaModule = await import("papaparse");
   const Papa = PapaModule.default || PapaModule;
   const content = await file.text();
-  const rawLines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
   // Attempt standard structured PapaParse first
   const parsedStructured = await new Promise((resolve) => {
@@ -514,14 +516,13 @@ export const parseCSV = async (file) => {
     });
   });
 
-  // If structured parsing converted all lines, return it
-  if (parsedStructured.length >= rawLines.length && parsedStructured.length > 0) {
+  // If structured PapaParse extracted valid records, use it
+  if (parsedStructured && parsedStructured.length > 0) {
     return parsedStructured;
   }
 
-  // Otherwise, split document content by newlines and iterate over EVERY valid line!
-  const lineTransactions = parseMultiLineText(content);
-  return lineTransactions.length >= parsedStructured.length ? lineTransactions : parsedStructured;
+  // Otherwise, fallback to line-by-line parser for unstructured statements
+  return parseMultiLineText(content);
 };
 
 /**

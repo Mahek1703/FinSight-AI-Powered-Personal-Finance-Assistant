@@ -138,3 +138,19 @@ The frontend Vite development server runs on `http://localhost:5173`.
 - **Input Validation**: Receipt images (base64) and voice transcripts are validated for type, length, and MIME types. Sensitive tokens and prompts are never logged.
 - **Fail-Loudly**: Missing Firebase client configuration renders a visible, clear diagnostics screen rather than failing silently with mock data.
 - **PWA Lifecycle**: Old legacy service workers and obsolete `v1` caches are cleaned up automatically on launch. Progressive Web App caching policies are controlled via Workbox in `vite.config.js`.
+
+---
+
+## 6. Automated Testing & Quality Checks
+
+Run linting, unit tests, and production build:
+
+```bash
+cd frontend
+npm run lint         # ESLint strict check (0 errors, 0 warnings)
+npm test             # Run Vitest unit tests (34 unit tests across pure logic modules)
+npm run test:rules   # Firestore Security Rules verification
+npm run build        # Production Vite build with vendor chunking (< 500 KB gzip target)
+```
+
+For manual step-by-step verification, follow [`TEST_PLAN.md`](./TEST_PLAN.md) (10-minute test walk-through).
